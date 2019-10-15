@@ -3,17 +3,23 @@ About Meowzok
 
 Meowzok is a game that may help you learn to play piano & read music. 
 
-I've tried to learn to sight read before but found I'd just learn the tune
-and then stop looking at the dots. This program creates games from the 
-midi files randomly making sheet music using all the right notes but in 
-the wrong order
+This program creates games from midi files, either randomly making sheet music 
+using all the right notes in the wrong order, or testing your speed at 
+playing various parts of the music. 
+
+After playing piece of music a score is calculated from the BPM you played at
+and the number of bum notes you hit. The scores are recorded so you can beat 
+your hi scores and give yourself a pat on the back. Well done
 
 The engraving is done by Lilypond and so it looks like real actual sheet music. 
-I've used other programs that just display 5 lines and some dots floating about
-but I wanted a program that displays all the clefs/accidentals/beams etc
+it's got clefs and accidentals and those beams and them rests in various lengths. 
+It's not a complete midi to sheet music converter, but it works for most simple midi files
 
 Requirements
 ------------
+
+This is a pre-pre-alpha release. For now, it's using the mido library and that has a 
+dependency on python-rtmidi 
 
 * Python 3.6
 * pygame
@@ -21,13 +27,13 @@ Requirements
 * mido 
 * lilypond
 
-on ubuntu/debian
+On ubuntu/debian
 
     sudo apt-get install lilypond libasound2-dev libjack python3-pip
 
     sudo pip3 install pygame python-rtmidi mido
 
-* you will also need a physical 88 key midi keyboard - smaller keyboards and a virtual keyboard are on the todo list
+* you will also need a physical 88 key midi keyboard - smaller keyboards and a virtual keyboard are on me todo list
 
 Running
 -------
