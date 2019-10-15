@@ -4,12 +4,11 @@ About Meowzok
 Meowzok is a game that may help you learn to play piano, read music,
 imporove your life / waste your time. 
 
-Meowzok reads midi files using the brilliant mido library
-Meowzok displays sheet music engraved by the awesome Lilypond program
-Meowzok checks what keys you hit on your keyboard
-Meowzok gives you a score and keeps track of your hi-scores
-
-Meld is licensed under the GPL v3 
+* Meowzok reads midi files using the brilliant mido library
+* Meowzok displays sheet music engraved by the awesome Lilypond program
+* Meowzok checks what keys you hit on your keyboard
+* Meowzok gives you a score and keeps track of your hi-scores
+* Meowzok is licensed the GPL v3 under
 
 
 Requirements
