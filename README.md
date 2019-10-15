@@ -40,10 +40,4 @@ Alternatively, you can install Meowzak system-wide by running:
 
  * `python3 setup.py install`
 
-Developing
-----------
-
-lilydots module generates a bunch of images containing the musical dots and lines
-theres are cached in ~/.cache/meowzok/name-of-midi-file by default 
-
 
