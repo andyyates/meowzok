@@ -32,11 +32,11 @@ on ubuntu/debian
 Running
 -------
 
-Meowzak can be run directly from this source tree directory. Just type:
+Meowzok can be run directly from this source tree directory. Just type:
 
- * `bin/meowzak`
+ * `bin/meowzok`
 
-Alternatively, you can install Meowzak system-wide by running:
+Alternatively, you can install Meowzok system-wide by running:
 
  * `python3 setup.py install`
 
