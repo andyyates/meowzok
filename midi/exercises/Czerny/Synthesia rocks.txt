@@ -1,0 +1,10 @@
+CZERNY FOR SYNTHESIA USERS by TonE
+
+The files have following properties:
+-    all files are in 100 bpm
+-    there are no program change events, simply select the sound you prefer on your synthesizer or keyboard
+-    all notes are in the pitch range from 36 to 96, this means you can play them on any five octave keyboard, even without having Synthesia's range feature ready yet. :)
+-    all notes on midi channel 1 have DO RE MI lyrics added
+-    some files have splitted shorter or smaller or decomposed versions, here the shortcuts used in the file names have meanings as follows: HM means Higher Melody, LM means Lower Melody, IM means Inbetween Melody, TS means Tonic Structure, R means Right hand only, sometimes LM means Last Motive.
+
+Have fun with Synthesia!  :-)

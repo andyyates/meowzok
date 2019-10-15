@@ -1,0 +1,24 @@
+<Project xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:foaf="http://xmlns.com/foaf/0.1/"
+         xmlns:gnome="http://api.gnome.org/doap-extensions#"
+         xmlns="http://usefulinc.com/ns/doap#">
+
+  <name xml:lang="en">Meowzok</name>
+  <shortdesc xml:lang="en">Piano dexterity and sight reading tutor</shortdesc>
+  <description xml:lang="en">
+Meowzok reads midi files using the brilliant mido library
+Meowzok displays sheet music engraved by the awesome Lilypond program
+Meowzok checks what keys you hit on your keyboard
+Meowzok gives you a score and keeps track of your hi-scores
+  </description>
+   <programming-language>Python</programming-language>
+
+  <maintainer>
+    <foaf:Person>
+      <foaf:name>Andy Yates</foaf:name>
+      <foaf:mbox rdf:resource="mailto:andrew.w.yates@gmail.com" />
+    </foaf:Person>
+  </maintainer>
+
+</Project>

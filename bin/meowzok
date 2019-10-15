@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+
+#based on meld bin
+
+import shutil
+import os
+from multiprocessing import freeze_support
+import sys
+
+def get_meowzok_dir():
+    global frozen
+    if frozen:
+        return os.path.dirname(sys.executable)
+
+    # Support running from an uninstalled version
+    self_path = os.path.realpath(__file__)
+    return os.path.abspath(os.path.join(os.path.dirname(self_path), ".."))
+
+
+frozen = getattr(sys, 'frozen', False)
+meowzokdir = get_meowzok_dir()
+
+uninstalled = False
+if os.path.exists(os.path.join(meowzokdir, "meowzok.doap")):
+    sys.path[0:0] = [meowzokdir]
+    uninstalled = True
+else:
+    print("installed")
+devel = os.path.exists(os.path.join(meowzokdir, ".git"))
+
+import meowzok.conf  
+
+# Silence warnings on non-devel releases (minor version is divisible by 2)
+is_stable = not bool(int(meowzok.conf.__version__.split('.')[1]) % 2)
+if is_stable:
+    import warnings
+    warnings.simplefilter("ignore")
+
+if uninstalled:
+    meowzok.conf.uninstalled()
+elif frozen:
+    meowzok.conf.frozen()
+
+def show_error_and_exit(error_text):
+    """
+    Show error in a robust way: always print to stdout and try to
+    display gui message via gtk or tkinter (first available).
+    Empty toplevel window is used as message box parent since
+    parentless message box cause toolkit and windowing system problems.
+    This function is both python 2 and python 3 compatible since it is used
+    to display wrong python version.
+    """
+    print(error_text)
+    raise_as_last_resort_to_display = False
+    try:
+        import gi
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+        Gtk.MessageDialog(
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.CLOSE,
+            text=error_text,
+        ).run()
+    except Exception:
+        # tkinter is imported here only to show a UI warning about
+        # missing dependencies.
+        try:
+            if sys.version_info < (3, 0):
+                from Tkinter import Tk
+                from tkMessageBox import showerror
+            else:
+                from tkinter import Tk
+                from tkinter.messagebox import showerror
+            toplevel = Tk(className="meowzok")
+            toplevel.wait_visibility()
+            showerror("meowzok", error_text, parent=toplevel)
+        except Exception:
+            # Displaying with tkinter failed too, just exit if not frozen.
+            # Frozen app may lack console but be able to show exceptions.
+            raise_as_last_resort_to_display = frozen
+    if raise_as_last_resort_to_display:
+        raise Exception(error_text)
+    sys.exit(1)
+
+
+def check_requirements():
+
+    pygame_req = "0.0.0"
+#* libasound2-dev     (python-rtmidi needs asoundlib.h)
+    python_rtmidi_req = "0.0.0"
+    mido_req = "0.0.0"
+    lilypond_req = "0.0.0"
+
+
+    def missing_reqs(mod, ver=("any"), exc=None):
+        if isinstance(exc, ImportError):
+            show_error_and_exit(_("Cannot import: ") + mod + "\n" + str(exc))
+        else:
+            modver = mod + " " + ".".join(map(str, ver))
+            show_error_and_exit(_("meowzok requires %s or higher.") % modver)
+
+    if sys.version_info[:2] < meowzok.conf.PYTHON_REQUIREMENT_TUPLE:
+        missing_reqs("Python", meowzok.conf.PYTHON_REQUIREMENT_TUPLE)
+
+    try:
+        import pygame
+        assert pygame.version.ver >= pygame_req
+    except (ImportError, AssertionError, ValueError) as e:
+        missing_reqs("pygame", pygame_req, e)
+
+    try:
+        import rtmidi
+        assert rtmidi.release.name == 'python-rtmidi'
+    except (ImportError, AssertionError, ValueError) as e:
+        missing_reqs("python-rtmidi", python_rtmidi_req , e)
+
+    try:
+        import mido
+    except (ImportError, AssertionError, ValueError) as e:
+        missing_reqs("mido", mido_req, e)
+
+    if shutil.which('lilypond') == None:
+        missing_reqs("lilypond", lilypond_req, None)
+
+#
+#def setup_settings():
+#    import meowzok.conf
+#
+#    schema_path = os.path.join(meowzok.conf.DATADIR, "org.gnome.meowzok.gschema.xml")
+#    compiled_schema_path = os.path.join(meowzok.conf.DATADIR, "gschemas.compiled")
+#
+#    try:
+#        schema_mtime = os.path.getmtime(schema_path)
+#        compiled_mtime = os.path.getmtime(compiled_schema_path)
+#        have_schema = schema_mtime < compiled_mtime
+#    except OSError:
+#        have_schema = False
+#
+#    if uninstalled and not have_schema:
+#        subprocess.call(["glib-compile-schemas", meowzok.conf.DATADIR],
+#                        cwd=meowzokdir)
+#
+#    import meowzok.settings
+#    meowzok.settings.create_settings()
+#
+#
+#def setup_logging():
+#    log = logging.getLogger()
+#
+#    # If we're running uninstalled and from Git, turn up the logging level
+#    if uninstalled and devel:
+#        log.setLevel(logging.INFO)
+#    else:
+#        log.setLevel(logging.CRITICAL)
+#
+#    handler = logging.StreamHandler()
+#    formatter = logging.Formatter("%(asctime)s %(levelname)s "
+#                                  "%(name)s: %(message)s")
+#    handler.setFormatter(formatter)
+#    log.addHandler(handler)
+#
+#
+#def setup_glib_logging():
+#    from gi.repository import GLib
+#    levels = {
+#        GLib.LogLevelFlags.LEVEL_DEBUG: logging.DEBUG,
+#        GLib.LogLevelFlags.LEVEL_INFO: logging.INFO,
+#        GLib.LogLevelFlags.LEVEL_MESSAGE: logging.INFO,
+#        GLib.LogLevelFlags.LEVEL_WARNING: logging.WARNING,
+#        GLib.LogLevelFlags.LEVEL_ERROR: logging.ERROR,
+#        GLib.LogLevelFlags.LEVEL_CRITICAL: logging.CRITICAL,
+#    }
+#    level_flag = (
+#        GLib.LogLevelFlags.LEVEL_WARNING |
+#        GLib.LogLevelFlags.LEVEL_ERROR |
+#        GLib.LogLevelFlags.LEVEL_CRITICAL
+#    )
+#
+#    log_domain = "Gtk"
+#    log = logging.getLogger(log_domain)
+#
+#    def silence(message):
+#        if "Drawing a gadget with negative dimensions" in message:
+#            return True
+#        if "resource overlay" in message:
+#            return True
+#        return False
+#
+#    # This logging handler is for "old" glib logging using a simple
+#    # syslog-style API.
+#    def log_adapter(domain, level, message, user_data):
+#        if not silence(message):
+#            log.log(levels.get(level, logging.WARNING), message)
+#
+#    try:
+#        GLib.log_set_handler(log_domain, level_flag, log_adapter, None)
+#    except AttributeError:
+#        # Only present in glib 2.46+
+#        pass
+#
+#    # This logging handler is for new glib logging using a structured
+#    # API. Unfortunately, it was added in such a way that the old
+#    # redirection API became a no-op, so we need to hack both of these
+#    # handlers to get it to work.
+#    def structured_log_adapter(level, fields, field_count, user_data):
+#        # Don't even format the message if it will be discarded
+#        py_logging_level = levels.get(level, logging.WARNING)
+#        if log.isEnabledFor(py_logging_level):
+#            # at least glib 2.52 log_writer_format_fields can raise on win32
+#            try:
+#                message = GLib.log_writer_format_fields(level, fields, True)
+#                if not silence(message):
+#                    log.log(py_logging_level, message)
+#            except Exception:
+#                GLib.log_writer_standard_streams(level, fields, user_data)
+#        return GLib.LogWriterOutput.HANDLED
+#
+#    try:
+#        GLib.log_set_writer_func(structured_log_adapter, None)
+#    except AttributeError:
+#        # Only present in glib 2.50+
+#        pass
+#
+#
+#def environment_hacks():
+#    # We manage cwd ourselves for git operations, and GIT_DIR in particular
+#    # can mess with this when set.
+#    for var in ('GIT_DIR', 'GIT_WORK_TREE'):
+#        try:
+#            del os.environ[var]
+#        except KeyError:
+#            pass
+#
+
+if __name__ == '__main__':
+    #setup_logging()
+    #disable_stdout_buffering()
+    check_requirements()
+    #setup_glib_logging()
+    #setup_resources()
+    #setup_settings()
+    #environment_hacks()
+
+    import meowzok.meowzokapp
+#    if sys.platform != 'win32':
+#        from gi.repository import GLib
+#        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT,
+#                             lambda *args: meowzok.meowzokapp.app.quit(), None)
+    status = meowzok.meowzokapp.run(sys.argv)
+    sys.exit(status)

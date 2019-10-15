@@ -1,0 +1,63 @@
+----TODO
+
+options
+    - audio connections
+    - internal beepy synth
+
+midi file options
+    - adjust key signature
+    - allow selection of midi track to use as right/left hand
+
+check midi system after cable plugged in = midi_out doesn't get setup
+
+solo pitch detect 
+
+play song 
+
+handle tied notes across bar lines (currently the full length is shown at the end of a bar, and at the end of a page - some extra bits of stave are shown)
+
+read key signatures from midi files (currently just gets it from a csv file next to the midi file)
+
+show progress bar when rebuilding level
+
+allow lily dot to not load if library is missing
+
+---DONE
+
+new layout engine
+    - include beaming
+
+new score system - 
+    no lives on bottom 
+    count errors
+    score = bpm / errors * speed
+
+record score in a little file somewhere
+
+put dots above played note - not the next note
+
+build lilypond score one page at a time in a separate thread, start the level after the first page is generated - separte cache into 1 file per page
+
+show a keyboard with fingers where you are and dots where they should be
+
+implement key signatures
+
+speed up score adding at eol
+
+show 'new high score!' on new high score
+
+redo the menu page - grid layout
+
+visibl escape button in level
+
+menu navigation with keyboard keys
+
+options
+    - midi connections
+    - show helper keyboard
+    - speed
+    - midi file directory
+
+check imports for existance and show errors for missing libraries
+
+
