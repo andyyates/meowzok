@@ -94,10 +94,10 @@ def check_requirements():
 
     def missing_reqs(mod, ver=("any"), exc=None):
         if isinstance(exc, ImportError):
-            show_error_and_exit(_("Cannot import: ") + mod + "\n" + str(exc))
+            show_error_and_exit(("Cannot import: ") + mod + "\n" + str(exc))
         else:
             modver = mod + " " + ".".join(map(str, ver))
-            show_error_and_exit(_("meowzok requires %s or higher.") % modver)
+            show_error_and_exit(("meowzok requires %s or higher.") % modver)
 
     if sys.version_info[:2] < meowzok.conf.PYTHON_REQUIREMENT_TUPLE:
         missing_reqs("Python", meowzok.conf.PYTHON_REQUIREMENT_TUPLE)
