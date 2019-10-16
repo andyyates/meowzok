@@ -23,6 +23,9 @@ class Score:
         self.played_notes = 0
         self.avaliable_notes = 0
 
+    def printit(self):
+        print("score ", self.bpm, self.errors, self.played_notes, self.grade())
+
     def __gt__(self, other): 
         return self.grade()>other.grade()
 
@@ -35,7 +38,7 @@ class Score:
 
     def percent_played(self):
         if self.avaliable_notes == 0:
-            return 100
+            return 0
         return int(((self.played_notes/self.avaliable_notes))*100)
 
     def grade(self):
@@ -90,7 +93,7 @@ class Game:
             with open(high_scores_filename(), 'r') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
-                    if len(row) == 4:
+                    if len(row) == 6:
                         if row[0] == lvlname:
                             score = Score()
                             try:
@@ -110,6 +113,9 @@ class Game:
                             except:
                                 print("Error loading avaliable_notes count ", row[3])
 
+                            print("loaded score, check its best")
+                            score.printit()
+                            self.high_score.printit()
                             self.high_score = max(self.high_score, score)
 
     
