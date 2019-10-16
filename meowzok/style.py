@@ -31,12 +31,14 @@ class Stylei:
 
 
     def resize_full(self):
+        print("resize full")
         modes = pygame.display.list_modes()
         for m in modes:
             self.resize(m[0],m[1])
             return
 
     def resize_big(self):
+        print("resize big")
         modes = pygame.display.list_modes()
         for m in modes[2:]:
             self.resize(m[0],m[1])
@@ -46,7 +48,7 @@ class Stylei:
     def resize(self, w,h):
         print("RESIZE STYLEee", w,h)
         self.screensize = (w,h)
-        fs = int(h/20)
+        fs = int(h/30)
         self.font = pygame.font.SysFont("dejavusansmono", fs)
 
     def save(self):

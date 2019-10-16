@@ -12,8 +12,6 @@ class MenuItem():
 class  Menu:
     def __init__(self):
         self.messages = []
-        self.message_timer = 0
-        self.message_time = 3000
         self.message_i = 0
         self.game = None
         self.menu_items_rects = []
@@ -29,15 +27,7 @@ class  Menu:
         self.menu.append(m)
     
     def advance(self):
-        self.message_timer += 1
-        if len(self.messages)>0:
-            if self.message_timer > self.message_time:
-                self.message_i += 1
-                self.message_i %= len(self.messages)
-                self.message_timer = 0
-        if self.game:
-            if (self.game.player.displayed_score < self.game.player.total_score):
-                self.game.player.displayed_score += 1
+        pass
 
     def __draw_text(self,surface, txt, x, y,color,selected=None):
 
@@ -83,15 +73,11 @@ class  Menu:
             self.menu_items_rects.append([cp, self.menu_up])
 
 
-        if len(self.messages)>0:
-            tp = self.__draw_text(surface,self.messages[self.message_i],x,y,(0,0,0))
+        for m in self.messages:
+            tp = self.__draw_text(surface,m,x,y,(0,0,0))
             y += tp.height
 
-        if self.game:
-            tp = self.__draw_text(surface,format_score(self.game.player.displayed_score),x,y,(0,0,0))
-            y += tp.height
-
-        if self.game == None or not (self.game.player.displayed_score < self.game.player.total_score):
+        if self.game == None:
             items_on_page = int(dim.height/tp.height)
 
             if self.menu_selection >= items_on_page+self.menu_top_item:
@@ -109,9 +95,6 @@ class  Menu:
 
                 
     def note_down(self, nn, notes_down):
-        if self.game:
-            if (self.game.player.displayed_score < self.game.player.total_score):
-                self.game.player.displayed_score = self.game.player.total_score
         for m in self.menu:
             if m.nn == nn:
                 return m.action
@@ -142,7 +125,7 @@ class MidiMenu(Menu):
     def __init__(self):
         super().__init__()
         self.title = "No input!"
-        self.messages = ['Plug in the midi cable', 'the one connected to the piano', 'this computer has no connection to your piano', 'a usb cable maybe?', 'what do you mean what is a USB cable']
+        self.messages = ['Plug in the midi cable', 'the one connected to the piano', 'this computer has no connection to your piano', 'a usb cable maybe?']
         self.add_menu_item("plug the midi cable in!", action=lambda:gmainmenu)
 
 
@@ -278,11 +261,16 @@ class LevelFail(Menu):
         self.game = game
         self.game.write_high_score_file()
         self.title = "GAME OVER"
-        self.title = 'GAME OVER - BPM:%.2f, errors:%d' % (self.game.player.bpm, self.game.get_error_count() )
+        self.messages = [
+                "bpm       : %3.2f" % (self.game.player.score.bpm), 
+                "bum notes : %d" % (self.game.player.score.errors),
+                "played    : %d%%" % (self.game.player.score.percent_played()),
+                "grade     : %d" % (self.game.player.score.grade())
+                ]
+
         self.add_menu_item(nn=77, title="Retry %s" % game.levels[game.player.level].name, action="retry_level")
         #self.add_menu_item(title="<< nah", action="goto_game_select")
         self.menu_up = [GameSelect, [self.game.levels[0].midi_file_path]]
-        self.game.player.displayed_score = self.game.player.total_score + self.game.get_score()
 
 
 class LevelComplete(Menu):
@@ -292,16 +280,19 @@ class LevelComplete(Menu):
         self.game.write_high_score_file()
         self.menu = []
         self.menu_up = [GameSelect, [self.game.levels[0].midi_file_path]]
+        self.title = 'Complete'
+        self.messages = [
+                "bpm       : %3.2f" % (self.game.player.score.bpm), 
+                "bum notes : %d" % (self.game.player.score.errors),
+                "played    : %d%%" % (self.game.player.score.percent_played()),
+                "grade     : %d" % (self.game.player.score.grade())
+                ]
         if len(game.levels) > game.player.level+1:
-            self.title = '%s complete - BPM:%.2f, errors:%d' % (game.levels[game.player.level].name,self.game.player.bpm, self.game.get_error_count() )
             self.add_menu_item(nn=77, title="%s" % (game.levels[game.player.level+1].name), action="next_level")
             #self.add_menu_item(title="<< nah", action="goto_game_select")
         else:
-            self.title = '%s complete - BPM:%.2f, errors:%d' % (game.levels[game.player.level].name,self.game.player.bpm, self.game.get_error_count())
             self.add_menu_item(nn=77, title="play again %s" % game.levels[game.player.level].name, action="retry_level")
             #self.add_menu_item(title="<< nah", action="goto_game_select")
-        self.game.player.displayed_score = self.game.player.total_score 
-        self.game.player.total_score += self.game.get_score()
 
 class MainMenu(Menu):
     def __init__(self):
@@ -368,10 +359,6 @@ class B:
 #                self.cs.game.player = p
             self.cs.game.retry_level()
             self.cs = self.cs.game
-        #elif r == "practice_continue":
-        #    self.cs.game.retry_practice()
-        #    self.cs = self.cs.game
-        #    return
         elif r == "next_level":
             if (self.cs.game.next_level()):
                 self.cs = self.cs.game
@@ -386,9 +373,6 @@ class B:
                 self.cs = GameSelect(self.cs.game.excersize[2])
             else:
                 self.cs = gmainmenu
-            return
-        elif r == "quit_play":
-            self.cs = gmainmenu
             return
         elif r == "set_game_speed":
             game_globs.inc_game_speed()

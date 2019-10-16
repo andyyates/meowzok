@@ -16,21 +16,44 @@ class GameGlobs:
 
 game_globs = GameGlobs()
 
+class Score:
+    def __init__(self):
+        self.bpm = 0
+        self.errors = 0
+        self.played_notes = 0
+        self.avaliable_notes = 0
+
+    def __gt__(self, other): 
+        return self.grade()>other.grade()
+
+    def percent_correct(self):
+        if self.played_notes < self.errors:
+            return 0
+        if self.played_notes == 0:
+            return 100
+        return int(((self.played_notes - self.errors) / self.played_notes)*100)
+
+    def percent_played(self):
+        if self.avaliable_notes == 0:
+            return 100
+        return int(((self.played_notes/self.avaliable_notes))*100)
+
+    def grade(self):
+        return self.bpm * self.percent_correct() * self.percent_played() / 10000
+
+
+
 
 class Player:
     def __init__(self):
-        self.level_score = 0
         self.total_score = 0
-        self.displayed_score = 0
         self.lives = game_globs.lives
         self.level = 0
-        self.bpm = 0
+        self.score = Score()
 
     def reset_for_level(self):
-        self.level_score = 0
-        self.displayed_score = 0
         self.lives = game_globs.lives
-        self.bpm = 0
+        self.score = Score()
 
 class Game:
     def __init__(self,levels):
@@ -41,28 +64,12 @@ class Game:
         self.__setup_level()
         self.__rebuild_dots()
         self.dead_count = 0
-        self.practice = 0
         self.last_drawn_level = -1
         self.last_drawn_page = -1
         self.page_i = 0
         self.notes_down = None
-
         self.keyboard = Keyboard()
         self.load_high_score()
-        self.hi_score = 0
-
-
-
-
-    def get_error_count(self):
-        fails = 0
-        for nl in self.__active_notes:
-            for n in nl:
-                if n.fail == -1:
-                    fails += 1
-                else:
-                    fails += n.fail
-        return fails
 
     def write_high_score_file(self):
         with open(high_scores_filename(),'a') as fd:
@@ -70,53 +77,42 @@ class Game:
             row = []
             row.append(self.levels[self.player.level].name)
             row.append(datetime.datetime.now().isoformat())
-            row.append(self.player.bpm)
-            row.append(self.get_error_count())
-            #row.append(self.get_score())
+            row.append(self.player.score.bpm)
+            row.append(self.player.score.errors)
+            row.append(self.player.score.played_notes)
+            row.append(self.player.score.avaliable_notes)
             writer.writerow(row)
 
     def load_high_score(self):
         lvlname = self.levels[self.player.level].name
-        self.high_score = 0
+        self.high_score = Score()
         if os.path.exists(high_scores_filename()):
             with open(high_scores_filename(), 'r') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
                     if len(row) == 4:
                         if row[0] == lvlname:
+                            score = Score()
                             try:
-                                bpm = float(row[2])
+                                score.bpm = float(row[2])
                             except:
                                 print("Error loading bpm ", row[2])
                             try:
-                                errors = int(row[3])
+                                score.errors = int(row[3])
                             except:
                                 print("Error loading error count ", row[3])
-                            self.high_score = max(self.high_score, self.__get_score(bpm,errors))
+                            try:
+                                score.played_notes = int(row[4])
+                            except:
+                                print("Error loading played_notes count ", row[3])
+                            try:
+                                score.avaliable_notes = int(row[5])
+                            except:
+                                print("Error loading avaliable_notes count ", row[3])
 
-    def __get_score(self, bpm, fails):
-        numer = 100-fails
-        if numer < 1:
-            numer = 1
-        return bpm * numer 
+                            self.high_score = max(self.high_score, score)
 
-    def get_score(self):
-        fails = self.get_error_count()
-        return self.__get_score(self.player.bpm, fails)
-
-    def recalc_score(self):
-        self.player.level_score = self.get_score()
-
-
-    def retry_practice(self):
-        self.player.reset_for_level()
-        self.__setup_level()
-
-        t = self.time
-        self.time = t = t - layout.treb.width * game_globs.time_inc / style.speed 
-        #while len(self.cue_notes) > 0 and self.cue_notes[0][0].time < t:
-        #    self.cue_notes.pop(0)
-#       # self.practice = 1
+    
 
     def retry_level(self):
         self.player.reset_for_level()
@@ -133,13 +129,13 @@ class Game:
             return False
 
     def __setup_level(self):
-        self.practice = 0
         self.__active_notes = self.levels[self.player.level].notes
-        #TODO - reset flags on notes
         self.time_sig = self.levels[self.player.level].time_sig
+        self.player.score.avaliable_notes = 0
         for nl in self.__active_notes:
             for n in nl:
                 n.fail = -1
+                self.player.score.avaliable_notes += 1
         self.active_i = 0
         self.win = 0
         self.alive = True
@@ -163,9 +159,7 @@ class Game:
 
 
     def pop_active(self):
-        print("Pop active")
         r = self.__active_notes[self.active_i]
-
         self.active_i += 1
         return r
 
@@ -173,11 +167,9 @@ class Game:
         if self.active_i >= len(self.__active_notes):
             return None
         r = self.__active_notes[self.active_i]
-
         self.keyboard.right_keys = []
         for n in r:
             self.keyboard.right_keys.append(n.nn)
-
         return r
 
 
@@ -212,10 +204,7 @@ class Game:
             title = style.font.render(self.levels[self.player.level].name, 1, style.title_fg)
         else:
             if self.win:
-                if self.practice:
-                    title = style.font.render(self.levels[self.player.level].name + " practice done!", 1, style.title_fg)
-                else:
-                    title = style.font.render(self.levels[self.player.level].name + " COMPLETE!", 1, style.title_fg)
+                title = style.font.render(self.levels[self.player.level].name + " COMPLETE!", 1, style.title_fg)
             else:
                 title = style.font.render("GAME OVER", 1, style.title_fg)
         textpos = title.get_rect()
@@ -230,13 +219,13 @@ class Game:
         cp.left = 0
         cp.top = 0
         surface.blit(text, cp)
-        self.menu_items_rects.append([cp, "quit_play"])
+        self.menu_items_rects.append([cp, "goto_main"])
 
 
 
 
 
-        msg = "HI %d " % (self.high_score)
+        msg = "HI bpm:%3.2f  bum notes:%d  played:%d%%" % (self.high_score.bpm, self.high_score.errors, self.high_score.percent_played())
         text = style.font.render(msg, 1, style.bpm)
         textpos = text.get_rect()
         textpos.right = dim.width
@@ -253,7 +242,7 @@ class Game:
         else:
             y = dim.height
 
-        msg = "BPM % 3.2f / SCORE %d " % (self.player.bpm, self.player.level_score)
+        msg = "bpm:%3.2f  bum notes:%d  played:%d%%" % (self.player.score.bpm, self.player.score.errors, self.player.score.percent_played())
         text = style.font.render(msg, 1, style.bpm)
         textpos = text.get_rect()
         textpos.right = dim.width
@@ -274,9 +263,6 @@ class Game:
 
 
     def advance(self):
-        if self.player.displayed_score < self.player.level_score:
-            self.player.displayed_score += 1
-
         rv = None
 
         if self.alive :
@@ -296,49 +282,29 @@ class Game:
 
         else:
             self.dead_count += 1
-            if self.dead_count > 100:
+            if self.dead_count > 60:
                 self.dead_count = 0
                 return self.return_end_of_level()
 
 
 
     def return_end_of_level(self):
-        if self.win == 1 and self.practice == 0:
+        if self.win == 1:
             return "LevelComplete"
         else:
             return "LevelFail"
 
 
     def key_down(self, key):
-        if key == pygame.K_RIGHT:
-            self.page_i +=1 
-        elif key == pygame.K_LEFT:
-            self.page_i -= 1
+        if key == pygame.K_LEFT:
+            return "goto_main"
         else:
             return key
 
     def mouse_down(self, pos):
         items = [x for x in self.menu_items_rects if x[0].contains(pos)]
-        print(items)
         if len(items) > 0:
             return items[0][1]
-
-    def key_down(self, key):
-        if key == pygame.K_DOWN:
-            if self.menu_selection < len(self.menu)-1:
-                self.menu_selection+=1
-        elif key == pygame.K_UP:
-            if self.menu_selection>0:
-                self.menu_selection-=1
-        elif key == pygame.K_RIGHT or key == pygame.K_RETURN:
-            if self.menu_selection > -1 and self.menu_selection < len(self.menu):
-                return self.menu[self.menu_selection].action
-        elif key == pygame.K_LEFT:
-            if hasattr(self, "menu_up"):
-                return self.menu_up
-        else:
-            return key
-
 
     def note_down(self, nn, notes_down):
         if self.__prev_error_note in notes_down:
@@ -368,10 +334,11 @@ class Game:
                         if n.fail == -1:
                             n.fail = 0
                         n.bad = 0
+                        self.player.score.played_notes += 1
                     total_ticks = pygame.time.get_ticks() - self.timer_first_note_down
                     total_beats = rv[0].time / self.time_sig.ticks_per_beat * (4 / self.time_sig.denominator)
                     if total_ticks > 0:
-                        self.player.bpm = total_beats / total_ticks * 60000
+                        self.player.score.bpm = total_beats / total_ticks * 60000
 
                     nl = self.next_active_note()
                     if nl:
@@ -380,10 +347,8 @@ class Game:
                         if time >= (self.page_i+1)*self.time_sig.get_bar_len()*game_globs.bars_per_page:
                             self.page_i += 1
 
-                    self.recalc_score()
                     return rv
                 else:
-                    self.recalc_score()
                     return 1
             elif ignore_error == False:
                 self.__prev_error_note = nn
@@ -404,19 +369,16 @@ class Game:
                     blb.x = near.x
                     blb.bad = 1
                     t.append(blb)
+                    self.player.score.errors += 1
                 self.notes_down = (self.active_i, t)
 
 
 
                 self.player.lives -= 1
-                #x = layout.lives.left + layout.sprites.width/2 * self.player.lives
-                #y = layout.lives.top - layout.sprites.life.get_rect().centery
-                #self.__shoot(x, y, layout.sprites.life)
                 if self.player.lives < 0 :
                     self.win = 0
                     self.alive = 0
 
-                self.recalc_score()
                 return 0
         return 1
 

@@ -22,6 +22,7 @@ midi_out = None
 screen = None
 event_get = None
 surface = None
+running = True
 
 
 def init_display():
@@ -108,8 +109,10 @@ def main_loop(b):
     global midi_out
     global screen
     global event_get
-    running = True
+    global running
+
     note_off_cue = []
+
     while running:
         #print("Running")
         events = event_get()
@@ -243,8 +246,7 @@ def main_loop(b):
         screen.blit(surface, (0, 0))
         pygame.display.update()
 
-
- 
+def cleanup():
             # convert them into pygame events.
 #            midi_evs = pygame.midi.midis2events(midi_events, i.device_id)
 #
@@ -277,9 +279,10 @@ def run(argv):
         if midi_in == None:
             b.cs = MidiMenu()
         main_loop(b)
+        cleanup()
     elif argc > 1:
         if sys.argv[1] == "test":
-            fl = os.listdir("tests")
+            #fl = os.listdir("tests")
             if argc > 2:
                 __import__("tests."+sys.argv[2])
                 exit()
@@ -296,6 +299,7 @@ def run(argv):
                 b = B()
                 b.cs = Game(lvls)
                 main_loop(b)
+                cleanup()
             else:
                 for f in fl:
                     if f.endswith(".mid"):
@@ -305,6 +309,7 @@ def run(argv):
             b = B()
             b.cs = eval(sys.argv[1]+"()")
             main_loop(b)
+            cleanup()
 
     else:
         fl = os.listdir("tests")

@@ -124,7 +124,8 @@ class LilyDots():
             print("", self.midi_file_path, " not exist")
             return False
 
-#        midi_file_mtime = os.path.getmtime(self.midi_file_path)
+        midi_file_mtime = os.path.getmtime(self.midi_file_path)
+
 #        for src_dirs in [Path().absolute()]:
 #            for f in os.listdir(src_dirs):
 #                print("Check date on ", f)

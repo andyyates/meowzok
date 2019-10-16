@@ -1,5 +1,7 @@
 ----TODO
 
+after playing a random notes / no-cache game, loading a normal game crashes as filename ends with .mid_no_cache = maybe set a flag...
+
 options
     - audio connections
     - internal beepy synth
