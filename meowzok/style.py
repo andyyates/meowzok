@@ -17,16 +17,19 @@ class Stylei:
         self.screensize = (640,480)
         self.midi_in_port = None
         self.midi_out_port = None
-        self.midi_file_path = None
         self.speed = 0
         self.show_helper_keyboard = False
         self.fullscreen = None
-        self.changed_in_menu = False
-        self.changed_in_main = False
+        self.lives = 10
+        self.time_inc = 15
+        self.bars_per_page = 4
         self.config_file_path = os.path.expanduser("~/.config/musackiller.conf")
         main_dir = os.path.split(os.path.abspath(__file__))[0]+"/"
-        midi_dir = os.path.join(main_dir+"midi/songs")
-        self.midi_file_path = midi_dir
+        self.midi_dir = os.path.join(main_dir+"midi/songs")
+
+        self.changed_in_menu = False
+        self.changed_in_main = False
+
         self.load()
 
 
@@ -57,13 +60,12 @@ class Stylei:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(["midi_in_port", self.midi_in_port]) 
             writer.writerow(["midi_out_port", self.midi_out_port]) 
-            writer.writerow(["midi_file_path", self.midi_file_path]) 
+            writer.writerow(["midi_dir", self.midi_dir]) 
             if self.show_helper_keyboard:
                 writer.writerow(["show_helper_keyboard", "True"])
             else:
                 writer.writerow(["show_helper_keyboard", "False"])
             writer.writerow(["config_file_path", self.config_file_path]) 
-            writer.writerow(["midi_file_path", self.midi_file_path]) 
             writer.writerow(["speed", self.speed]) 
             if self.fullscreen:
                 writer.writerow(["fullscreen", "True"])
@@ -83,14 +85,12 @@ class Stylei:
                             self.midi_in_port = v
                         elif k=="midi_out_port":
                             self.midi_out_port = v
-                        elif k=="midi_file_path":
-                            self.midi_file_path = v
+                        elif k=="midi_dir":
+                            self.midi_dir = v
                         elif k=="show_helper_keyboard":
                             self.show_helper_keyboard = v == "True"
                         elif k=="config_file_path":
                             self.config_file_path = v
-                        elif k=="midi_file_path":
-                            self.midi_file_path = v
                         elif k=="speed":
                             self.speed = int(v)
                         elif k=="fullscreen":

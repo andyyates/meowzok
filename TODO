@@ -1,5 +1,7 @@
 ----TODO
 
+don't pass garbage into lilydots midifile name, infact, pass the whole midi file into the game, as opposed to generating levels - or something like that - stupid to duplicate fn&time_sig
+
 after playing a random notes / no-cache game, loading a normal game crashes as filename ends with .mid_no_cache = maybe set a flag...
 
 options

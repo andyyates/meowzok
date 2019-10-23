@@ -5,6 +5,7 @@ import mido
 import statistics 
 import csv
 import os
+import copy
 
 
 class TimeSig:
@@ -122,15 +123,16 @@ class MKMidiFile():
             writer.writerow(self.config_csv_header)
 
 
-      
-
-    def __init__(self, filename):
+        
+    def __init__(self, path):
         tmp_notes = []
         self.config_csv_header = ["setting","value"]
         self.time_sig = TimeSig(4,4)
+        self.path = path
+        self.orig_name = self.name = os.path.basename(path).replace(".mid","")
 
-        print ("loading ", filename)
-        mid = mido.MidiFile(filename)
+        print ("loading ", path)
+        mid = mido.MidiFile(path)
 
         time_sig = None
 
@@ -205,8 +207,9 @@ class MKMidiFile():
 
         #get rid of midi-channels 2+
         self.notes = self.notes[0]
+        self.active_notes = self.notes
 
-        self.__load_config_file(filename)
+        self.__load_config_file(path)
 
 
 

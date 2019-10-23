@@ -8,13 +8,6 @@ from meowzok.util import *
 from meowzok.midifile import *
 
 
-class GameGlobs:
-    def __init__(self):
-        self.lives = 10
-        self.time_inc = 15
-        self.bars_per_page = 4
-
-game_globs = GameGlobs()
 
 class Score:
     def __init__(self):
@@ -49,20 +42,15 @@ class Score:
 
 class Player:
     def __init__(self):
-        self.total_score = 0
-        self.lives = game_globs.lives
-        self.level = 0
-        self.score = Score()
-
-    def reset_for_level(self):
-        self.lives = game_globs.lives
+        self.lives = style.lives
         self.score = Score()
 
 class Game:
-    def __init__(self,levels):
+    def __init__(self, up, midifile):
+        self.menu_up = up
         self.__active_notes = []
         self.done_notes = []
-        self.levels = levels
+        self.midifile = midifile
         self.player = Player()
         self.__setup_level()
         self.__rebuild_dots()
@@ -78,7 +66,7 @@ class Game:
         with open(high_scores_filename(),'a') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             row = []
-            row.append(self.levels[self.player.level].name)
+            row.append(self.midifile.name)
             row.append(datetime.datetime.now().isoformat())
             row.append(self.player.score.bpm)
             row.append(self.player.score.errors)
@@ -87,7 +75,7 @@ class Game:
             writer.writerow(row)
 
     def load_high_score(self):
-        lvlname = self.levels[self.player.level].name
+        lvlname = self.midifile.name
         self.high_score = Score()
         if os.path.exists(high_scores_filename()):
             with open(high_scores_filename(), 'r') as fd:
@@ -124,19 +112,8 @@ class Game:
         self.player.reset_for_level()
         self.__setup_level()
 
-    def next_level(self):
-        self.player.reset_for_level()
-        if len(self.levels) > self.player.level+1:
-            self.player.level += 1
-            self.__setup_level()
-            self.__rebuild_dots()
-            return True
-        else:
-            return False
-
     def __setup_level(self):
-        self.__active_notes = self.levels[self.player.level].notes
-        self.time_sig = self.levels[self.player.level].time_sig
+        self.__active_notes = self.midifile.active_notes
         self.player.score.avaliable_notes = 0
         for nl in self.__active_notes:
             for n in nl:
@@ -149,16 +126,14 @@ class Game:
         self.__prev_error_note = -1
         self.timer_first_note_down = -1
         self.timer_last_note_down = -1
-        self.last_drawn_level = -1
         self.last_drawn_page = -1
         self.page_i = 0
         
 
     def __rebuild_dots(self):
-        lvl = self.levels[self.player.level]
         w,h = style.screensize
         self.stave_position = pygame.Rect(0,int(h/4),w,int(h/2))
-        self.dot_drawer = game_globs.dot_class(game_name = lvl.name, midi_file_path=lvl.midi_file_path, bars_per_page = game_globs.bars_per_page, notes=lvl.notes, time_sig=lvl.time_sig, size=self.stave_position)
+        self.dot_drawer = style.dot_class(self.midifile)
         self.dot_surface = pygame.Surface((self.stave_position.w,self.stave_position.h))
         self.dot_surface.convert()
 
@@ -181,11 +156,9 @@ class Game:
 
 
     def draw(self, surface):
-
-        if self.last_drawn_level != self.player.level or self.last_drawn_page != self.page_i:
+        if self.last_drawn_page != self.page_i:
             self.notes_down = None
             self.dot_drawer.draw_music(self.dot_surface, self.page_i)
-        self.last_drawn_level = self.player.level
         self.last_drawn_page = self.page_i
 
         surface.fill(style.main_bg)
@@ -207,12 +180,12 @@ class Game:
         self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time)
 
         if self.alive:
-            title = style.font.render(self.levels[self.player.level].name, 1, style.title_fg)
+            title = style.font.render(self.midifile.name, 1, style.title_fg)
         else:
             if self.win:
-                title = style.font.render(self.levels[self.player.level].name + " COMPLETE!", 1, style.title_fg)
+                title = style.font.render(self.midifile.name + " COMPLETE!", 1, style.title_fg)
             else:
-                title = style.font.render("GAME OVER", 1, style.title_fg)
+                title = style.font.render(self.midifile.name + "GAME OVER", 1, style.title_fg)
         textpos = title.get_rect()
         textpos.left = textpos.height
         textpos.top = 0
@@ -225,7 +198,7 @@ class Game:
         cp.left = 0
         cp.top = 0
         surface.blit(text, cp)
-        self.menu_items_rects.append([cp, "goto_main"])
+        self.menu_items_rects.append([cp, self.menu_up])
 
 
 
@@ -270,22 +243,16 @@ class Game:
 
     def advance(self):
         rv = None
-
         if self.alive :
-            self.__time += game_globs.time_inc * style.speed / 2
+            self.__time += style.time_inc * style.speed / 2
             if self.next_active_note() == None:
                 self.timer_last_note_down = pygame.time.get_ticks()
                 self.win = 1
                 self.alive = False
-                return self.return_end_of_level()
-
-            if self.next_active_note()[0].time < self.__time:
+            elif self.next_active_note()[0].time < self.__time:
                 print("die", self.__time)
-                #if self.never_die == False:
                 self.win = 0
                 self.alive = False
-
-
         else:
             self.dead_count += 1
             if self.dead_count > 60:
@@ -303,7 +270,9 @@ class Game:
 
     def key_down(self, key):
         if key == pygame.K_LEFT:
-            return "goto_main"
+            return self.menu_up
+        elif key == pygame.K_ESCAPE:
+            return self.menu_up
         else:
             return key
 
@@ -342,15 +311,15 @@ class Game:
                         n.bad = 0
                         self.player.score.played_notes += 1
                     total_ticks = pygame.time.get_ticks() - self.timer_first_note_down
-                    total_beats = rv[0].time / self.time_sig.ticks_per_beat * (4 / self.time_sig.denominator)
+                    total_beats = rv[0].time / self.midifile.time_sig.ticks_per_beat * (4 / self.midifile.time_sig.denominator)
                     if total_ticks > 0:
                         self.player.score.bpm = total_beats / total_ticks * 60000
 
                     nl = self.next_active_note()
                     if nl:
-                        quantizer = int(self.time_sig.ticks_per_beat / 32)
+                        quantizer = int(self.midifile.time_sig.ticks_per_beat / 32)
                         time = round(nl[0].time/quantizer,0)*quantizer
-                        if time >= (self.page_i+1)*self.time_sig.get_bar_len()*game_globs.bars_per_page:
+                        if time >= (self.page_i+1)*self.midifile.time_sig.get_bar_len()*style.bars_per_page:
                             self.page_i += 1
 
                     return rv
@@ -378,8 +347,6 @@ class Game:
                     self.player.score.errors += 1
                 self.notes_down = (self.active_i, t)
 
-
-
                 self.player.lives -= 1
                 if self.player.lives < 0 :
                     self.win = 0
@@ -388,158 +355,139 @@ class Game:
                 return 0
         return 1
 
-            
-
-
-class Level:
-    def __init__(self, notes, level_name, time_sig, midi_file_path=os.path.join(main_dir, "MKGame.py")):
-        self.notes = notes
-        self.name = level_name
-        self.time_sig = time_sig
-        self.midi_file_path = midi_file_path
-        time = 0
-        for n in self.notes:
-            if hasattr(n[0],'time'):
-                time = n[0].time
-            else:
-                for ni in n:
-                    ni.time = time
-                time += n[0].length
-
-
-
-def load_midi_file_game(filename, difficulty):
-    print("Load midi file game", filename, difficulty)
-    levels = []
-    fn = os.path.basename(filename).replace(".mid","")
-    path = os.path.join(style.midi_file_path+"/", filename)
-    mf = MKMidiFile(path)
-    random.seed(time.time())
-
-    default_len = mf.time_sig.ticks_per_beat
-    default_len_name = mf.time_sig.get_length_name(default_len)
-    
-    notes_flat = []
-    for nl in mf.notes:
-        for n in nl:
-            notes_flat.append(n)
-    if difficulty == 1:
-        parts = []
-        for c in range(0,2):
-            scale_notes = list(set( [ n.nn for n in notes_flat if n.clef == c ] ))
-            scale_notes.sort()
-            for i in range(3,6):
-                parts += [scale_notes[j:j+i] for j in range(0,len(scale_notes),i)]
-            parts.sort(key = lambda x:i*1000 + sum([abs([71,50][c] - y) for y in x]))
-            for level_no, p in enumerate(parts):
-                if len(p) < 3:
-                    continue
-                scale = p.copy() 
-                reverse =  p.copy()
-                reverse.reverse()
-                scale += reverse[1:] + scale.copy()[1:] + reverse.copy()[1:]
-                for i in range(0,4):
-                    random.shuffle(p)
-                    scale += p.copy()
-                levels.append(Level( [[Note(nn=n, clef=c, time=i*480, length_ticks=default_len, length_name=default_len_name)] for i,n in enumerate(scale)], "%s - Easy game %d" %( fn, level_no), mf.time_sig ))
-
-    if difficulty <= 2:
-        parts = []
-        for c in range(0,2):
-            scale_notes = list(set( [ n.nn for n in notes_flat if n.clef == c ] ))
-            scale_notes.sort()
-            p = scale_notes
-            if len(p) < 3:
-                continue
-            scale = p.copy() 
-            reverse = p[1:].copy()
-            reverse.reverse()
-            scale += reverse + scale.copy() + reverse.copy()
-            for i in range(0,4):
-                random.shuffle(p)
-                scale += p.copy()
-            levels.append(Level( [[Note(nn=n, clef=c, time=i*480, length_ticks=default_len, length_name=default_len_name)] for i,n in enumerate(scale)], "%s - Medium game - %s hand" %( fn, ["right","left"][c]), mf.time_sig ))
-
-    if difficulty <= 4:
-        parts = []
-        #game 3 is right hand only
-        if difficulty <= 3:
-            rih = 0
-        else:
-            rih = 1
-        for c in range(rih,2):
-            notes = []
-            for nl in mf.notes:
-                grp = []
-                for n in nl:
-                    if n.clef == c:
-                        grp.append(n)
-                if len(grp)>0:
-                    notes.append(grp)
-            if len(notes) > 0:
-                levels.append(Level(notes, "%s - %s hand" % (fn, ["right","left"][c]), mf.time_sig))
-        
-        
-
-    uniq = []
-    for nl in mf.notes:
-        if not nl in uniq:
-            uniq.append(nl)
-
-    for dif in range(difficulty,8):
-        notes = []
-        t = 0
-        loop_limit = 10000
-        while len(notes) < 160 and loop_limit > 0:
-            loop_limit -= 1
-            if len(uniq) == 0:
-                break
-            nl = random.choice(uniq)
-            if len(nl) == 0:
-                continue
-            mnl = []
-            for j in range(1,4):
-                n = random.choice(nl)
-                if dif == 5:
-                    if n.clef != 0:
-                        continue
-                elif dif == 6:
-                    if n.clef != 1:
-                        continue
-                if not n.nn in [o.nn for o in mnl]:
-                    n1 = Note()
-                    n1.nn = n.nn
-                    n1.clef = n.clef
-                    n1.time = t
-                    n1.length_ticks = default_len
-                    n1.length_name = default_len_name
-                    mnl.append(n1)
-            if len(mnl)>0:
-                notes.append(mnl)
-                t += mf.time_sig.ticks_per_beat
-        levels.append(Level(notes, "%s - random notes" % (fn), mf.time_sig))
-
-    
-    for l in levels:
-        l.midi_file_path = path + "_no_cache"
-
-
-    return levels
-
-
-
-
-
-
-
-
-
-def load_midi_file(filename):
-    path = os.path.join(style.midi_file_path+"/", filename)
-    mf = MKMidiFile(path)
-    fn = os.path.basename(filename).replace(".mid","")
-    levels = [Level(mf.notes, fn, mf.time_sig, path)]
-    return levels
-
-
-
+#            
+#def load_midi_file_game(filename, difficulty):
+#    print("Load midi file game", filename, difficulty)
+#    levels = []
+#    fn = os.path.basename(filename).replace(".mid","")
+#    path = os.path.join(style.midi_dir+"/", filename)
+#    mf = MKMidiFile(path)
+#    random.seed(time.time())
+#
+#    default_len = mf.time_sig.ticks_per_beat
+#    default_len_name = mf.time_sig.get_length_name(default_len)
+#    
+#    notes_flat = []
+#    for nl in mf.notes:
+#        for n in nl:
+#            notes_flat.append(n)
+#    if difficulty == 1:
+#        parts = []
+#        for c in range(0,2):
+#            scale_notes = list(set( [ n.nn for n in notes_flat if n.clef == c ] ))
+#            scale_notes.sort()
+#            for i in range(3,6):
+#                parts += [scale_notes[j:j+i] for j in range(0,len(scale_notes),i)]
+#            parts.sort(key = lambda x:i*1000 + sum([abs([71,50][c] - y) for y in x]))
+#            for level_no, p in enumerate(parts):
+#                if len(p) < 3:
+#                    continue
+#                scale = p.copy() 
+#                reverse =  p.copy()
+#                reverse.reverse()
+#                scale += reverse[1:] + scale.copy()[1:] + reverse.copy()[1:]
+#                for i in range(0,4):
+#                    random.shuffle(p)
+#                    scale += p.copy()
+#                levels.append(Level( [[Note(nn=n, clef=c, time=i*480, length_ticks=default_len, length_name=default_len_name)] for i,n in enumerate(scale)], "%s - Easy game %d" %( fn, level_no), mf.time_sig ))
+#
+#    if difficulty <= 2:
+#        parts = []
+#        for c in range(0,2):
+#            scale_notes = list(set( [ n.nn for n in notes_flat if n.clef == c ] ))
+#            scale_notes.sort()
+#            p = scale_notes
+#            if len(p) < 3:
+#                continue
+#            scale = p.copy() 
+#            reverse = p[1:].copy()
+#            reverse.reverse()
+#            scale += reverse + scale.copy() + reverse.copy()
+#            for i in range(0,4):
+#                random.shuffle(p)
+#                scale += p.copy()
+#            levels.append(Level( [[Note(nn=n, clef=c, time=i*480, length_ticks=default_len, length_name=default_len_name)] for i,n in enumerate(scale)], "%s - Medium game - %s hand" %( fn, ["right","left"][c]), mf.time_sig ))
+#
+#    if difficulty <= 4:
+#        parts = []
+#        #game 3 is right hand only
+#        if difficulty <= 3:
+#            rih = 0
+#        else:
+#            rih = 1
+#        for c in range(rih,2):
+#            notes = []
+#            for nl in mf.notes:
+#                grp = []
+#                for n in nl:
+#                    if n.clef == c:
+#                        grp.append(n)
+#                if len(grp)>0:
+#                    notes.append(grp)
+#            if len(notes) > 0:
+#                levels.append(Level(notes, "%s - %s hand" % (fn, ["right","left"][c]), mf.time_sig))
+#        
+#        
+#
+#    uniq = []
+#    for nl in mf.notes:
+#        if not nl in uniq:
+#            uniq.append(nl)
+#
+#    for dif in range(difficulty,8):
+#        notes = []
+#        t = 0
+#        loop_limit = 10000
+#        while len(notes) < 160 and loop_limit > 0:
+#            loop_limit -= 1
+#            if len(uniq) == 0:
+#                break
+#            nl = random.choice(uniq)
+#            if len(nl) == 0:
+#                continue
+#            mnl = []
+#            for j in range(1,4):
+#                n = random.choice(nl)
+#                if dif == 5:
+#                    if n.clef != 0:
+#                        continue
+#                elif dif == 6:
+#                    if n.clef != 1:
+#                        continue
+#                if not n.nn in [o.nn for o in mnl]:
+#                    n1 = Note()
+#                    n1.nn = n.nn
+#                    n1.clef = n.clef
+#                    n1.time = t
+#                    n1.length_ticks = default_len
+#                    n1.length_name = default_len_name
+#                    mnl.append(n1)
+#            if len(mnl)>0:
+#                notes.append(mnl)
+#                t += mf.time_sig.ticks_per_beat
+#        levels.append(Level(notes, "%s - random notes" % (fn), mf.time_sig))
+#
+#    
+#    for l in levels:
+#        l.midi_file_path = path + "_no_cache"
+#
+#
+#    return levels
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#def load_midi_file(filename):
+#    path = os.path.join(style.midi_dir+"/", filename)
+#    mf = MKMidiFile(path)
+#    fn = os.path.basename(filename).replace(".mid","")
+#    levels = [Level(mf.notes, fn, mf.time_sig, path)]
+#    return levels
+#
+#
+#
