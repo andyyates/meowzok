@@ -45,8 +45,16 @@ Meowzok can be run directly from this source tree directory. Just type:
 
  * `bin/meowzok`
 
-Alternatively, you can install Meowzok system-wide by running:
+you could install Meowzok system-wide by running:
 
  * `python3 setup.py install`
+
+ but don't do that it's still a bit to fragile
+
+Notes
+-----
+
+This program will not edit midi files. Use a decent editor like musescore to produce a readable file. 
+The current version of rosegarden does a bad job of exporting midi files (sometimes loosing the time sig and key)
 
 

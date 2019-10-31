@@ -5,29 +5,29 @@ import csv
 
 class Stylei:
     def __init__(self):
+        main_dir = os.path.split(os.path.abspath(__file__))[0]+"/"
+        self.bars_per_page = 4
         self.bg = (240,240,240)
-        self.stave_bg = (255,255,255)
-        self.stave_fg = (0,0,0)
+        self.bpm = (0,0,0)
+        self.changed_in_main = False
+        self.changed_in_menu = False
+        self.config_file_path = os.path.expanduser("~/.config/meowzok.conf")
+        self.lives = 10
+        self.main_bg = (255,255,255)
         self.menu_item_bg = (240,240,240)
         self.menu_item_fg = (0,0,240)
-        self.title_fg = (0,0,0)
-        self.time_line = (0,200,200)
-        self.bpm = (0,0,0)
-        self.main_bg = (255,255,255)
-        self.screensize = (640,480)
+        self.midi_dir = os.path.join(main_dir+"midi/songs")
         self.midi_in_port = None
         self.midi_out_port = None
-        self.midi_file_path = None
         self.midi_through = None
-        self.speed = 0
+        self.screensize = (640,480)
         self.show_helper_keyboard = False
-        self.fullscreen = None
-        self.changed_in_menu = False
-        self.changed_in_main = False
-        self.config_file_path = os.path.expanduser("~/.config/meowzok.conf")
-        main_dir = os.path.split(os.path.abspath(__file__))[0]+"/"
-        midi_dir = os.path.join(main_dir+"midi/songs")
-        self.midi_file_path = midi_dir
+        self.speed = 0
+        self.stave_bg = (255,255,255)
+        self.stave_fg = (0,0,0)
+        self.time_inc = 15
+        self.time_line = (0,200,200)
+        self.title_fg = (0,0,0)
         self.load()
 
 
@@ -58,12 +58,11 @@ class Stylei:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(["midi_in_port", self.midi_in_port]) 
             writer.writerow(["midi_out_port", self.midi_out_port]) 
-            writer.writerow(["midi_file_path", self.midi_file_path]) 
+            writer.writerow(["midi_dir", self.midi_dir]) 
             if self.show_helper_keyboard:
                 writer.writerow(["show_helper_keyboard", "True"])
             else:
                 writer.writerow(["show_helper_keyboard", "False"])
-            writer.writerow(["midi_file_path", self.midi_file_path]) 
             writer.writerow(["speed", self.speed]) 
             if self.fullscreen:
                 writer.writerow(["fullscreen", "True"])
@@ -83,12 +82,10 @@ class Stylei:
                             self.midi_in_port = v
                         elif k=="midi_out_port":
                             self.midi_out_port = v
-                        elif k=="midi_file_path":
-                            self.midi_file_path = v
+                        elif k=="midi_dir":
+                            self.midi_dir = v
                         elif k=="show_helper_keyboard":
                             self.show_helper_keyboard = v == "True"
-                        elif k=="midi_file_path":
-                            self.midi_file_path = v
                         elif k=="speed":
                             self.speed = int(v)
                         elif k=="fullscreen":

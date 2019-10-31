@@ -50,14 +50,13 @@ class Page():
 
 
 class LilyDots():
-    def __init__(self, game_name, midi_file_path, bars_per_page, notes, time_sig, size):
-        self.scale = 1
-        self.bars_per_page = bars_per_page
-        self.notes = notes
-        self.time_sig = time_sig
-        self.size = size
-        self.game_name = game_name
-        self.midi_file_path = midi_file_path
+    def __init__(self, midifile):#game_name, midi_file_path, bars_per_page, notes, time_sig):
+        #self.bars_per_page = bars_per_page
+        #self.notes = notes
+        #self.time_sig = time_sig
+        #self.game_name = game_name
+        #self.midi_file_path = midi_file_path
+        self.midifile = midifile
         self.pages = []
         self.left_pad = 0
         self.top_pad = 0
@@ -91,13 +90,13 @@ class LilyDots():
             exit()
 
     def split_notes_into_pages(self):
-        page_len = self.time_sig.get_bar_len()*self.bars_per_page
+        page_len = self.midifile.time_sig.get_bar_len()*style.bars_per_page
         left_time = 0
         right_time = page_len
         cpage = Page(0)
         cpage.left_time = left_time
         cpage.right_time = right_time
-        for nl in self.notes:
+        for nl in self.midifile.active_notes:
             t = nl[0].time
             if t >= right_time:
                 self.pages.append(cpage)
@@ -115,21 +114,19 @@ class LilyDots():
                     n.page_no = p.i
                     n.number_in_page = i
 
-
-        #print("Found %d pages" % (len(self.pages)))
         
 
     def load_from_cache(self):
         print("loading from cache")
         out_of_date = False
-        if not os.path.exists(self.midi_file_path):
-            print("", self.midi_file_path, " not exist")
+        if not os.path.exists(self.midifile.path):
+            print("", self.midifile.path, " not exist")
             return False
 
         if debug_never_load_cache == True:
             return False
 
-        midi_file_mtime = os.path.getmtime(self.midi_file_path)
+        midi_file_mtime = os.path.getmtime(self.midifile.path)
 
 
 #        for src_dirs in [Path().absolute()]:
@@ -241,21 +238,21 @@ class LilyDots():
     def draw_time_line(self, surface, offset, page_i, time):
         xo = offset.x
         yo = offset.y
-        bar_len_ticks = self.time_sig.get_bar_len()
-        left_bar = page_i * self.bars_per_page
+        bar_len_ticks = self.midifile.time_sig.get_bar_len()
+        left_bar = page_i * style.bars_per_page
         left_time = left_bar * bar_len_ticks
-        right_time = left_time + (self.bars_per_page * bar_len_ticks)
+        right_time = left_time + (style.bars_per_page * bar_len_ticks)
         if (time > 0 and time < left_time) or time > right_time:
             return
-        time_to_px = (surface.get_rect().width - self.left_pad*2) / (bar_len_ticks*self.bars_per_page) * self.scale
+        time_to_px = (surface.get_rect().width - self.left_pad*2) / (bar_len_ticks*style.bars_per_page) * self.scale
         l = (time - left_time) * time_to_px + self.left_pad + 120
         pygame.draw.rect(surface, style.time_line, (l+xo, offset.y, 2, offset.height))
 
 
     def blob_note(self, surface, active_note_i, nn, color, offset):
-        if not len(self.notes) > active_note_i:
+        if not len(self.midifile.active_notes) > active_note_i:
             return 
-        nl = self.notes[active_note_i]
+        nl = self.midifile.active_notes[active_note_i]
         n = nl[0]
         p = self.pages[n.page_no]
         if not p.loaded:
@@ -333,7 +330,7 @@ class LilyDots():
             print_times("Page %d" %(p.i), len(tmp_notes), p.left_time, p.right_time)
 
 
-            for i in range(p.left_time, p.right_time+1, self.time_sig.get_bar_len()):
+            for i in range(p.left_time, p.right_time+1, self.midifile.time_sig.get_bar_len()):
                 if i == 0:
                     continue
                 nl = []
@@ -362,12 +359,12 @@ class LilyDots():
                     if len(tnl) == 0:
                         print_times("Skip empty notes")
                         continue
-                    quantizer = int(self.time_sig.ticks_per_beat / 4)  
+                    quantizer = int(self.midifile.time_sig.ticks_per_beat / 4)  
                     qtime = round(tnl[0].time/quantizer,0)*quantizer
                     if qtime >= p.right_time:
                         d = p.right_time - lily_time
                         if d>0:
-                            rest_name = self.time_sig.get_length_name(d)
+                            rest_name = self.midifile.time_sig.get_length_name(d)
                             print_times ("eopr>", qtime, lily_time)
                             note_body[clef] += "r" + rest_name + " "
                         break
@@ -375,10 +372,10 @@ class LilyDots():
                     if diff > 0:
                         print_times ("rest>", qtime, lily_time)
 
-                        ndiff = self.time_sig.quantize_length(diff)
+                        ndiff = self.midifile.time_sig.quantize_length(diff)
                         if ndiff != diff:
                             print("Wierd stuff in diff time ..")
-                        rest_name = self.time_sig.get_length_name(ndiff)
+                        rest_name = self.midifile.time_sig.get_length_name(ndiff)
                         note_body[clef] += "r" + rest_name + " "
                         lily_time += ndiff
                     if tnl[0].length_ticks == 0:
@@ -406,8 +403,8 @@ class LilyDots():
 
             
             
-            keysig = self.key_sigs[self.time_sig.key_sig_sharps]
-            if self.time_sig.key_sig_is_major:
+            keysig = self.key_sigs[self.midifile.time_sig.key_sig_sharps]
+            if self.midifile.time_sig.key_sig_is_major:
                 keysig += " \\major"
             else:
                 keysig += " \\minor"
@@ -415,9 +412,9 @@ class LilyDots():
             body = ""
             current_bar = p.i * self.bars_per_page+1
             if note_body[0]!="":
-                body += staff_template % ("treble", self.time_sig.numerator,self.time_sig.denominator, keysig, current_bar, note_body[0])
+                body += staff_template % ("treble", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, note_body[0])
             if note_body[1]!="":
-                body +=staff_template % ("bass", self.time_sig.numerator,self.time_sig.denominator, keysig, current_bar, note_body[1])
+                body +=staff_template % ("bass", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, note_body[1])
             body = lily_template % (body) 
 
             opfn = self.make_cache_file_name(p.i)
@@ -432,7 +429,8 @@ class LilyDots():
 
 
 
-            process = subprocess.Popen(['lilypond', '--png', '-o', opfn, opfn+".ly"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            FNULL = open(os.devnull, 'w')
+            process = subprocess.Popen(['lilypond', '--png', '-o', opfn, opfn+".ly"], stdout=FNULL, stderr=subprocess.PIPE)
             output, err = process.communicate()
             rc = process.returncode
 
@@ -455,7 +453,7 @@ class LilyDots():
 
 
     def make_cache_file_name(self, i):
-        gn = re.sub("[^a-zA-Z0-9]","_",self.game_name)
+        gn = re.sub("[^a-zA-Z0-9]","_",self.midifile.name)
         fn = cache_path + gn + "/"
         if not os.path.exists(fn):
             os.makedirs(fn)

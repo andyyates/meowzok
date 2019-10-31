@@ -12,10 +12,10 @@ import random
 import sys
 import time
 
-#import SloppyDots as MKDots
-#game_globs.dot_class = MKDots.SloppyDots
+#import meowzok.sloppydots as MKDots
+#style.dot_class = MKDots.SloppyDots
 import meowzok.lilydots as Dots
-game_globs.dot_class = Dots.LilyDots
+style.dot_class = Dots.LilyDots
 
 clock = pygame.time.Clock()
 
@@ -145,7 +145,7 @@ def main_loop(b):
             elif e.type in [KEYDOWN]:
                 r = b.key_down(e.key)
                 #print(r, r == None)
-                if r == pygame.K_ESCAPE:
+                if r == "quit":
                     print("quit")
                     running = False
                     print("quit e")
@@ -241,7 +241,7 @@ def run(argv):
         init_display()
         b = B()
         if midi_in == None:
-            b.cs = MidiMenu()
+            b.cs = MidiMenu(b.cs)
         main_loop(b)
         cleanup()
     elif argc > 1:
@@ -256,10 +256,10 @@ def run(argv):
                         continue
                     print("main.py test " + f.replace(".py",""))
         elif sys.argv[1] == "load":
-            fl = os.listdir(style.midi_file_path)
+            fl = os.listdir(style.midi_dir)
             if argc > 2:
                 init_display()
-                lvls = load_midi_file(style.midi_file_path+"/"+sys.argv[2]+".mid")
+                lvls = load_midi_file(style.midi_dir+"/"+sys.argv[2]+".mid")
                 b = B()
                 b.cs = Game(lvls)
                 main_loop(b)
