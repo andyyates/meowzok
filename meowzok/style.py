@@ -17,7 +17,7 @@ class Stylei:
         self.main_bg = (255,255,255)
         self.menu_item_bg = (240,240,240)
         self.menu_item_fg = (0,0,240)
-        self.midi_dir = os.path.join(main_dir+"midi/songs")
+        self.midi_dir = os.path.join(main_dir+"/../midi/exercises/hanon")
         self.midi_in_port = None
         self.midi_out_port = None
         self.midi_through = None
