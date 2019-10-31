@@ -133,7 +133,6 @@ class MidiMenu(Menu):
         super().__init__(up)
         self.title = "No input!"
         self.messages = ['Plug in the midi cable', 'the one connected to the piano', 'this computer has no connection to your piano', 'a usb cable maybe?']
-        self.add_menu_item("plug the midi cable in!", action=lambda:gmainmenu)
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 games = []
