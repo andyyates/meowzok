@@ -56,6 +56,7 @@ class LilyDots():
         #self.time_sig = time_sig
         #self.game_name = game_name
         #self.midi_file_path = midi_file_path
+        self.scale = 1
         self.midifile = midifile
         self.pages = []
         self.left_pad = 0
@@ -300,7 +301,7 @@ class LilyDots():
 
 
         staff_template = """
-                \n\n\\new Staff { \\numericTimeSignature \\clef "%s" \\time %d/%d \\key %s 
+                \n\n\\new Staff { \\numericTimeSignature \\clef "%s" \\key %s \\time %d/%d  
                 \\override Score.BarNumber.break-visibility = ##(#t #t #t)
                 \\set Score.currentBarNumber = #%d
                 \\override Voice.NoteHead.color = #(x11-color 'red)
@@ -410,11 +411,11 @@ class LilyDots():
                 keysig += " \\minor"
 
             body = ""
-            current_bar = p.i * self.bars_per_page+1
+            current_bar = p.i * style.bars_per_page+1
             if note_body[0]!="":
-                body += staff_template % ("treble", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, note_body[0])
+                body += staff_template % ("treble", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, current_bar, note_body[0])
             if note_body[1]!="":
-                body +=staff_template % ("bass", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, note_body[1])
+                body +=staff_template % ("bass", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, current_bar, note_body[1])
             body = lily_template % (body) 
 
             opfn = self.make_cache_file_name(p.i)
