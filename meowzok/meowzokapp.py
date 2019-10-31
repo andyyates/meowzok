@@ -195,11 +195,12 @@ def main_loop(b):
                                     for n in r:
                                         process_note_off(n.nn)
         else:
-            time.sleep(1)
-            pn = midiio.get_first_input_device_id()
-            if pn != None:
-                open_midi_ports()
-                b.cs = MainMenu()
+            pass
+            #time.sleep(1)
+            #pn = midiio.get_first_input_device_id()
+            #if pn != None:
+            #    open_midi_ports()
+            #    b.cs = MainMenu()
 
         clock.tick(30)
 
