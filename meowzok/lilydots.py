@@ -69,15 +69,15 @@ class LilyDots():
 
         self.split_notes_into_pages()
         #check for cache images
-        if not self.load_from_cache():
+        if midifile.cacheable == False or not self.load_from_cache():
             print("load from cache failed..")
         #    exit()
             #build images 
 
             
-            #thread = threading.Thread(target = self.__run_generate_images)
-            #thread.start()
-            self.generate_images()
+            thread = threading.Thread(target = self.__run_generate_images)
+            thread.start()
+            #self.generate_images()
             #scan images to find notes
 
     def __run_generate_images(self):
@@ -254,6 +254,8 @@ class LilyDots():
 
         #check crash
         xpos = self.get_note_pos(active_i)
+        if xpos == None:
+            return 
         x = xpos.left*self.scale + offset.left + self.left_pad
         return x < l+xo
 
@@ -445,25 +447,15 @@ class LilyDots():
         
 
 
-        dirname = os.path.dirname(self.make_cache_file_name(self.pages[0].i))
-
-        FNULL = open(os.devnull, 'w')
-        popencmd = ['lilypond', '--png']
-        for p in self.pages:
+            dirname = os.path.dirname(self.make_cache_file_name(self.pages[0].i))
+            FNULL = open(os.devnull, 'w')
+            popencmd = ['lilypond', '--png']
             popencmd.append(p.ly_name)
-        print ("Run subprocess cmd", popencmd)
-        process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
-        output, err = process.communicate()
-        #print(output, err)
-        rc = process.returncode
+            print ("Run subprocess cmd", popencmd)
+            process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
+            output, err = process.communicate()
+            rc = process.returncode
 
-
-            #print("-"*80)
-            #print(output)
-            #print(err)
-            #print("-"*80)
-
-        for p in self.pages:
             p.png_path = dirname + "/"+p.ly_name+".png"
             p.img = pygame.image.load(p.png_path)
             self.inspect_images(p.i)

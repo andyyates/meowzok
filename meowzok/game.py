@@ -46,7 +46,8 @@ class Player:
         self.score = Score()
 
 class Game:
-    def __init__(self, up, midifile):
+    def __init__(self, up, midifile, cacheable=True):
+        midifile.cacheable = cacheable
         self.menu_up = up
         self.__active_notes = []
         self.done_notes = []
@@ -203,9 +204,10 @@ class Game:
                     self.dot_drawer.blob_note(surface, acti, n, (0,200,0), offset=self.stave_position)
                     self.notes_down = None
 
-        crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
-        if crash:
-            self.alive = False
+        if style.speed != 0:
+            crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
+            if crash:
+                self.alive = False
 
         if self.alive:
             title = style.font.render(self.midifile.name, 1, style.title_fg)

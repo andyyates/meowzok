@@ -154,9 +154,10 @@ class GameSelect(Menu):
         self.title = filename.replace(".mid", "")
         self.midi_file = MKMidiFile(path)
         self.menu = []
-        self.add_menu_item("play song", lambda : Game(self, self.midi_file))
+        self.add_menu_item("play song", [Game, [self, self.midi_file, True]])
         for g in games:
-            self.add_menu_item(g[0], [g[1], [self, self.midi_file]])
+            title = " ".join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', g[0])).split()[1:])
+            self.add_menu_item(title, [g[1], [self, self.midi_file]])
 
     def advance(self):
         self.midi_file.name = self.midi_file.orig_name
