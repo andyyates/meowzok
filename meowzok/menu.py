@@ -198,7 +198,10 @@ class PathPicker(Menu):
         self.add_menu_item(title=".", action=[self.menu_up.set, [self.setting_key, self.value]])
         self.add_menu_item(title="..", action=[self.change_dir, [".."]])
         for i,f in enumerate(sorted(os.listdir(self.value))):
-            self.add_menu_item(title=f, action=[self.change_dir, [f]])
+            if os.path.isdir(self.value + "/" + f):
+                self.add_menu_item(title=f, action=[self.change_dir, [f]])
+            else:
+                self.add_menu_item(title=f, action=[self.menu_up.set, [self.setting_key, self.value]])
 
     def change_dir(self, f):
         print("CHange dir ", self.value, f)

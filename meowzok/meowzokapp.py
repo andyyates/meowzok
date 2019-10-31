@@ -81,6 +81,8 @@ def init_display():
     pygame.midi.init()
     pygame.display.set_caption('Kill the music')
 
+    open_midi_ports()
+
     if style.fullscreen:
         style.resize_full()
         screen = pygame.display.set_mode(style.screensize, pygame.FULLSCREEN)
