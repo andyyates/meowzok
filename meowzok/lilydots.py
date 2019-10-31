@@ -16,7 +16,7 @@ from meowzok.util import *
 from meowzok.midifile import Note
 
 debug_always_load_cache = False
-debug_never_load_cache = True
+debug_never_load_cache = False
 print_debug_msgs = False
 
 
@@ -75,9 +75,9 @@ class LilyDots():
             #build images 
 
             
-            thread = threading.Thread(target = self.__run_generate_images)
-            thread.start()
-            #self.generate_images()
+            #thread = threading.Thread(target = self.__run_generate_images)
+            #thread.start()
+            self.generate_images()
             #scan images to find notes
 
     def __run_generate_images(self):
@@ -419,21 +419,25 @@ class LilyDots():
             body = lily_template % (body) 
 
             opfn = self.make_cache_file_name(p.i)
+            p.ly_name = os.path.basename(opfn)
             f = open(opfn+".ly", "w")
             f.write(body)
             f.close()
 
-            cmd = "lilypond --png -o " + opfn + " " + opfn + ".ly "
-            process = os.popen(cmd)
-            cmd_output = process.read()
-            process.close()
+        
 
 
+        dirname = os.path.dirname(self.make_cache_file_name(self.pages[0].i))
 
-            FNULL = open(os.devnull, 'w')
-            process = subprocess.Popen(['lilypond', '--png', '-o', opfn, opfn+".ly"], stdout=FNULL, stderr=subprocess.PIPE)
-            output, err = process.communicate()
-            rc = process.returncode
+        FNULL = open(os.devnull, 'w')
+        popencmd = ['lilypond', '--png']
+        for p in self.pages:
+            popencmd.append(p.ly_name)
+        print ("Run subprocess cmd", popencmd)
+        process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
+        output, err = process.communicate()
+        #print(output, err)
+        rc = process.returncode
 
 
             #print("-"*80)
@@ -441,14 +445,9 @@ class LilyDots():
             #print(err)
             #print("-"*80)
 
-
-
-            p.png_path = opfn+".png"
+        for p in self.pages:
+            p.png_path = dirname + "/"+p.ly_name+".png"
             p.img = pygame.image.load(p.png_path)
-
-
-
-            #exit()
             self.inspect_images(p.i)
 
 

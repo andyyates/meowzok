@@ -21,8 +21,8 @@ else:
 
 import unittest
 grunning = False
-for f in os.listdir(style.style.midi_file_path):
-    gtestmidifile = style.style.midi_file_path+"/"+f
+for f in os.listdir(style.style.midi_dir):
+    gtestmidifile = style.style.midi_dir+"/"+f
     break
 
 class TestScreen(unittest.TestCase):
@@ -43,19 +43,19 @@ class TestScreen(unittest.TestCase):
 
 
     def gameSelect(self):
-        self.b.cs = menu.GameSelect("/foo/bar/baz")
+        self.b.cs = menu.GameSelect(None, "/foo/bar/baz")
         app.running = grunning
         app.main_loop(self.b)
 
-    def levelComplete(self):
-        self.b.cs = menu.LevelComplete(self.game)
-        app.running = grunning
-        app.main_loop(self.b)
-
-    def levelFail(self):
-        self.b.cs = menu.LevelFail(self.game)
-        app.running = grunning
-        app.main_loop(self.b)
+#    def levelComplete(self):
+#        self.b.cs = menu.LevelComplete(self.game)
+#        app.running = grunning
+#        app.main_loop(self.b)
+#
+#    def levelFail(self):
+#        self.b.cs = menu.LevelFail(self.game)
+#        app.running = grunning
+#        app.main_loop(self.b)
 
     def mainMenu(self):
         self.b.cs = menu.MainMenu()
@@ -63,17 +63,17 @@ class TestScreen(unittest.TestCase):
         app.main_loop(self.b)
 
     def midiMenu(self):
-        self.b.cs = menu.MidiMenu()
+        self.b.cs = menu.MidiMenu(None)
         app.running = grunning
         app.main_loop(self.b)
 
     def pathPicker(self):
-        self.b.cs = menu.PathPicker()
+        self.b.cs = menu.PathPicker(None)
         app.running = grunning
         app.main_loop(self.b)
 
     def settingsMenu(self):
-        self.b.cs = menu.SettingsMenu()
+        self.b.cs = menu.SettingsMenu(None)
         app.running = grunning
         app.main_loop(self.b)
 
@@ -81,8 +81,6 @@ class TestScreen(unittest.TestCase):
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestScreen("gameSelect"))
-    suite.addTest(TestScreen("levelComplete"))
-    suite.addTest(TestScreen("levelFail"))
     suite.addTest(TestScreen("mainMenu"))
     suite.addTest(TestScreen("midiMenu"))
     #suite.addTest(TestScreen("pathPicker"))

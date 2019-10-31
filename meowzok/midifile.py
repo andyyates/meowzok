@@ -15,19 +15,26 @@ class TimeSig:
         self.ticks_per_beat = 480
         self.note_length_names = {
                 1:  "1",
-                1.5:"1.",
+                3/2:"1.",
+                7/4:"1..",
                 1/2:"2",
                 3/4:"2.",
+                7/8:"2..",
                 1/4:"4",
                 3/8:"4.",
+                7/16:"4..",
                 1/8:"8",
                 3/16:"8.",
+                7/32:"8..",
                 1/16:"16",
                 3/32:"16.",
+                7/64:"16..",
                 1/32:"32",
                 3/64:"32.",
+                7/128:"32..",
                 1/64:"64",
-                3/128:"64."
+                3/128:"64.",
+                7/256:"64.."
         }
         self.key_sig_sharps = 0
         self.key_sig_is_major = 1
@@ -52,7 +59,7 @@ class TimeSig:
         fraction_len = length_ticks/(self.ticks_per_beat*4)
         #length = min(self.note_length_names.keys(),  key=lambda x:abs(x-fraction_len))
         if fraction_len not in self.note_length_names.keys():
-            raise Exception("I can't handle a note with length of ", length_ticks, " ticks")
+            raise Exception("I can't handle a note with length of ", length_ticks, "/" , self.ticks_per_beat*4, " ")
         return self.note_length_names[fraction_len]
 
     def get_bar_len(self):

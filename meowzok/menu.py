@@ -246,8 +246,8 @@ class SettingsMenu(Menu):
     def __rebuild_menu(self):
         self.title = "settings"
         self.menu = []
-        self.add_menu_item(title="Midi In  : %s " % (style.midi_in_port), action=[OptionsMenu, ["Midi In",midiio.get_midi_input_port_names(), "midi_in", style.midi_in_port]])
-        self.add_menu_item(title="Midi Out : %s " % (style.midi_out_port), action=[OptionsMenu, ["Midi Out",midiio.get_midi_output_port_names(), "midi_out", style.midi_out_port]])
+        self.add_menu_item(title="Midi In  : %s " % (style.midi_in_port), action=[OptionsMenu, [self, "Midi In",midiio.get_midi_input_port_names(), "midi_in", style.midi_in_port]])
+        self.add_menu_item(title="Midi Out : %s " % (style.midi_out_port), action=[OptionsMenu, [self, "Midi Out",midiio.get_midi_output_port_names(), "midi_out", style.midi_out_port]])
         if style.show_helper_keyboard:
             s = "Yes"
         else:
