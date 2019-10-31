@@ -79,7 +79,7 @@ def init_display():
     pygame.display.init()
     pygame.font.init()
     pygame.midi.init()
-    pygame.display.set_caption('Kill the music')
+    pygame.display.set_caption('Meowzok')
 
     open_midi_ports()
 
@@ -141,18 +141,13 @@ def main_loop(b):
 
         for e in events:
             if e.type in [QUIT]:
-                print("-Quit")
                 running = False
-                print("Quit x")
             elif e.type in [KEYDOWN]:
                 r = b.key_down(e.key)
-                #print(r, r == None)
                 if r == "quit":
-                    print("quit")
                     running = False
-                    print("quit e")
-            #elif e.type in [pygame.midi.MIDIIN]:
-            #    print (e)
+                elif r != None:
+                    print("Unknown menu action ", r)
             elif e.type in [MOUSEBUTTONDOWN]:
                 b.mouse_down(e.pos)
 
@@ -165,16 +160,11 @@ def main_loop(b):
             style.changed_in_main = True
         
         if midi_in:
-            #print("Polling..")
             while(midi_in.poll()):
-                print("Poll true")
                 ii = 0
                 for evt in midiio.read_events(midi_in):
                     ii += 1
-                    print("Cycle events ", ii)
-                    print (evt)
                     if evt.command == "note_off" or (evt.command == "note_on" and evt.data2 == 0):
-                        print("NOTE off ", evt.data1)
                         nn = evt.data1
                         process_note_off(nn)
                         if style.midi_through and midi_out:
@@ -187,8 +177,7 @@ def main_loop(b):
                             notes_down.append(nn)
                             r = b.note_down(nn, notes_down)
                             if r == 0:
-                                print("make a horrid noise")
-                                for i in range(0,4):
+                                for i in range(0,10):
                                     nn = random.randint(44,127)
                                     midi_out.note_on(nn, random.randint(90,120))
                                     note_off_cue.append(nn)
@@ -213,22 +202,13 @@ def main_loop(b):
         pygame.display.update()
 
 def cleanup():
-            # convert them into pygame events.
-#            midi_evs = pygame.midi.midis2events(midi_events, i.device_id)
-#
-#            for m_e in midi_evs:
-#                event_post( m_e )
     print("start cleanup")
-
-    #local on
     if midi_out:
         print("cleanup midi out")
         midi_out.close()
-
     if midi_in:
         print("cleanup midi in")
         midi_in.close()
-
     print("cleanup display")
     pygame.display.quit()
     print("display closed")

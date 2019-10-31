@@ -192,6 +192,9 @@ class LilyDots():
 
 
     def draw_music(self, surface, page_i):
+        if page_i >= len(self.pages):
+            return
+
         page = self.pages[page_i]
         while not page.loaded:
             if self.thread_died.isSet():
@@ -236,7 +239,7 @@ class LilyDots():
 
 
 
-    def draw_time_line(self, surface, offset, page_i, time):
+    def draw_time_line(self, surface, offset, page_i, time, active_i):
         xo = offset.x
         yo = offset.y
         bar_len_ticks = self.midifile.time_sig.get_bar_len()
@@ -249,16 +252,27 @@ class LilyDots():
         l = (time - left_time) * time_to_px + self.left_pad + 120
         pygame.draw.rect(surface, style.time_line, (l+xo, offset.y, 2, offset.height))
 
+        #check crash
+        xpos = self.get_note_pos(active_i)
+        x = xpos.left*self.scale + offset.left + self.left_pad
+        return x < l+xo
 
-    def blob_note(self, surface, active_note_i, nn, color, offset):
+    def get_note_pos(self, active_note_i):
         if not len(self.midifile.active_notes) > active_note_i:
-            return 
+            return None
         nl = self.midifile.active_notes[active_note_i]
         n = nl[0]
         p = self.pages[n.page_no]
         if not p.loaded:
-            return
+            return None
         xpos = p.note_xs[n.number_in_page]
+        return xpos
+
+
+    def blob_note(self, surface, active_note_i, nn, color, offset):
+        xpos = self.get_note_pos(active_note_i)
+        if not xpos:
+            return
         x = xpos.left*self.scale + offset.left + self.left_pad
         y = xpos.top*self.scale + offset.top + self.top_pad
         #print(active_note_i, n.number_in_page)
@@ -365,6 +379,10 @@ class LilyDots():
                     if qtime >= p.right_time:
                         d = p.right_time - lily_time
                         if d>0:
+                            nd = self.midifile.time_sig.quantize_length(d)
+                            if nd != d:
+                                print("note: quantized rest is %d vs unquantized at %d", nd, d)
+                            d = nd
                             rest_name = self.midifile.time_sig.get_length_name(d)
                             print_times ("eopr>", qtime, lily_time)
                             note_body[clef] += "r" + rest_name + " "

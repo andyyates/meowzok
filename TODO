@@ -1,12 +1,19 @@
 ----TODO
 
-don't pass garbage into lilydots midifile name, infact, pass the whole midi file into the game, as opposed to generating levels - or something like that - stupid to duplicate fn&time_sig
+
+
+allow loop over parts you can't play
+
+jump back to begining of bar if you mess up
+
+add a random order game
+
+add a 'start with a couple of notes' game
 
 after playing a random notes / no-cache game, loading a normal game crashes as filename ends with .mid_no_cache = maybe set a flag...
 
 options
     - audio connections
-    - internal beepy synth
 
 midi file options
     - adjust key signature
@@ -65,3 +72,6 @@ options
 check imports for existance and show errors for missing libraries
 
 
+don't pass garbage into lilydots midifile name, infact, pass the whole midi file into the game, as opposed to generating levels - or something like that - stupid to duplicate fn&time_sig
+
+no internal beepy synth - unless there is a nice library that doesn't hang and has no depends

@@ -101,9 +101,9 @@ class Game:
                             except:
                                 print("Error loading avaliable_notes count ", row[3])
 
-                            print("loaded score, check its best")
-                            score.printit()
-                            self.high_score.printit()
+                            #print("loaded score, check its best")
+                            #score.printit()
+                            #self.high_score.printit()
                             self.high_score = max(self.high_score, score)
 
     
@@ -136,6 +136,32 @@ class Game:
         self.dot_drawer = style.dot_class(self.midifile)
         self.dot_surface = pygame.Surface((self.stave_position.w,self.stave_position.h))
         self.dot_surface.convert()
+
+
+    def goto_page(self, time):
+        page_size = self.midifile.time_sig.get_bar_len()*style.bars_per_page
+        pno = int(time/page_size)
+        self.page_i = pno
+
+    def back_up_to_bar(self):
+        if self.active_i < 0:
+            self.active_i = 0
+        t = self.next_active_note()[0].time
+        t = int(t/self.midifile.time_sig.get_bar_len()) * self.midifile.time_sig.get_bar_len()
+        while(self.active_i > 0 and self.__active_notes[self.active_i][0].time > t):
+            self.active_i -= 1
+        self.__time = t-self.midifile.time_sig.get_bar_len()
+        self.goto_page(t)
+        #self.active_i += 1
+
+    def fwd_a_bar(self):
+        if self.active_i >= len(self.__active_notes):
+            self.active_i = len(self.__active_notes)-1
+        t = self.next_active_note()[0].time
+        t = int(t/self.midifile.time_sig.get_bar_len()+1) * self.midifile.time_sig.get_bar_len()
+        while(self.active_i < len(self.__active_notes)-1 and self.__active_notes[self.active_i][0].time < t):
+            self.active_i += 1
+        self.goto_page(t)
 
 
 
@@ -177,7 +203,9 @@ class Game:
                     self.dot_drawer.blob_note(surface, acti, n, (0,200,0), offset=self.stave_position)
                     self.notes_down = None
 
-        self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time)
+        crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
+        if crash:
+            self.alive = False
 
         if self.alive:
             title = style.font.render(self.midifile.name, 1, style.title_fg)
@@ -270,7 +298,13 @@ class Game:
 
     def key_down(self, key):
         if key == pygame.K_LEFT:
-            return self.menu_up
+            if self.alive == False or self.active_i == 0:
+                return self.menu_up
+            else:
+                self.active_i -= 1
+                self.back_up_to_bar()
+        elif key == pygame.K_RIGHT:
+            self.fwd_a_bar()
         elif key == pygame.K_ESCAPE:
             return self.menu_up
         else:
@@ -319,8 +353,7 @@ class Game:
                     if nl:
                         quantizer = int(self.midifile.time_sig.ticks_per_beat / 32)
                         time = round(nl[0].time/quantizer,0)*quantizer
-                        if time >= (self.page_i+1)*self.midifile.time_sig.get_bar_len()*style.bars_per_page:
-                            self.page_i += 1
+                        self.goto_page(time)
 
                     return rv
                 else:
@@ -353,6 +386,7 @@ class Game:
                     self.win = 0
                     self.alive = 0
 
+                self.back_up_to_bar()
                 return 0
         return 1
 

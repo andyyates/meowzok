@@ -314,21 +314,20 @@ class B:
 
 
     def __act(self,r):
-        if hasattr(self.cs, 'act'):
-            r = self.cs.act(r)
+        #if hasattr(self.cs, 'act'):
+        #    r = self.cs.act(r)
         if r == None:
             return
         elif hasattr(r, 'menu'):
             self.cs = r
             return None
-        elif callable(r):
+        if callable(r):
             self.cs = r()
+            return None
         elif hasattr(r, 'pop'):
             if callable(r[0]):
                 self.cs = r[0](*r[1])
-            else:
-                print ("Unknonw menu action ", r)
-        print("return B act r == ", r)
+                return None
         return r
 
 
@@ -346,7 +345,6 @@ class B:
         return self.__act( self.cs.advance() )
 
     def note_down(self,nn, notes_down):
-        print(self.cs.note_down)
         return self.__act( self.cs.note_down(nn, notes_down) )
 
     def draw(self, surface ):
