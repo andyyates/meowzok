@@ -23,18 +23,13 @@ dependency on python-rtmidi
 
 * Python 3.6
 * pygame
-* python-rtmidi  (needs asound.h and jack.h)
-* mido 
 * lilypond
 
 On ubuntu/debian
 
-    sudo apt-get install lilypond libasound2-dev libjack python3-pip
+    sudo apt-get install lilypond python3-pip
 
-    sudo pip3 install pygame python-rtmidi mido
-
-On mint
-    TODO: sudo apt-get install python-setuptools 
+    sudo pip3 install pygame 
 
 * you will also need a physical 88 key midi keyboard - smaller keyboards and a virtual keyboard are on me todo list
 
