@@ -1,6 +1,7 @@
 from meowzok.game import *
 from meowzok.util import *
 from meowzok.style import style
+from meowzok import midiio
 import re
 
 class MenuItem():
@@ -78,7 +79,7 @@ class  Menu:
             y += tp.height
 
         if self.game == None:
-            items_on_page = int(dim.height/tp.height)
+            items_on_page = int(dim.height/tp.height)-1
 
             if self.menu_selection >= items_on_page+self.menu_top_item:
                 self.menu_top_item +=1
@@ -145,7 +146,7 @@ class GameSelect(Menu):
         self.add_menu_item("random notes right hand", ['load_midi_file_game', 5, path])
         self.add_menu_item("random notes left hand", ['load_midi_file_game', 6, path])
         self.add_menu_item("random notes both hands", ['load_midi_file_game', 7, path])
-        self.add_menu_item("listen song", ['listen_midi_file', path])
+        #self.add_menu_item("listen song", ['listen_midi_file', path])
 
 
 class OptionsMenu(Menu):
@@ -213,6 +214,8 @@ class SettingsMenu(Menu):
                 style.speed = self.speeds.index(set_value)
             elif set_key == "set_midi_file_path":
                 style.midi_file_path = set_value
+            elif set_key == "midi_through":
+                style.midi_through = set_value == "True"
             else:
                 print("Unknown settings key ", set_key, "=", set_value)
             style.changed_in_menu = True
@@ -224,8 +227,8 @@ class SettingsMenu(Menu):
         self.menu_up = lambda:gmainmenu
         self.title = "settings"
         self.menu = []
-        self.add_menu_item(title="Midi In  : %s " % (style.midi_in_port), action=[OptionsMenu, ["Midi In",get_midi_input_ports(), "midi_in", style.midi_in_port]])
-        self.add_menu_item(title="Midi Out : %s " % (style.midi_out_port), action=[OptionsMenu, ["Midi Out",get_midi_output_ports(), "midi_out", style.midi_out_port]])
+        self.add_menu_item(title="Midi In  : %s " % (style.midi_in_port), action=[OptionsMenu, ["Midi In",midiio.get_midi_input_port_names(), "midi_in", style.midi_in_port]])
+        self.add_menu_item(title="Midi Out : %s " % (style.midi_out_port), action=[OptionsMenu, ["Midi Out",midiio.get_midi_output_port_names(), "midi_out", style.midi_out_port]])
         if style.show_helper_keyboard:
             s = "Yes"
         else:
@@ -241,6 +244,13 @@ class SettingsMenu(Menu):
         else:
             s = "False"
         self.add_menu_item(title="Fullscreen: %s " % (s), action=[OptionsMenu, ["Fullscreen",["True","False"], "fullscreen", s]])
+
+
+        if style.midi_through:
+            s = "True"
+        else:
+            s = "False"
+        self.add_menu_item(title="midi through: %s " % (s), action=[OptionsMenu, ["midi_through",["True","False"], "midi_through", s]])
 
 
 
@@ -260,6 +270,7 @@ class LevelFail(Menu):
         super().__init__()
         self.game = game
         self.game.write_high_score_file()
+        self.menu_up = "goto_main" #[GameSelect, [self.game.levels[0].midi_file_path]]
         self.title = "GAME OVER"
         self.messages = [
                 "bpm       : %3.2f" % (self.game.player.score.bpm), 
@@ -270,7 +281,6 @@ class LevelFail(Menu):
 
         self.add_menu_item(nn=77, title="Retry %s" % game.levels[game.player.level].name, action="retry_level")
         #self.add_menu_item(title="<< nah", action="goto_game_select")
-        self.menu_up = [GameSelect, [self.game.levels[0].midi_file_path]]
 
 
 class LevelComplete(Menu):
@@ -279,7 +289,7 @@ class LevelComplete(Menu):
         self.game = game
         self.game.write_high_score_file()
         self.menu = []
-        self.menu_up = [GameSelect, [self.game.levels[0].midi_file_path]]
+        self.menu_up = "goto_main" #[GameSelect, [self.game.levels[0].midi_file_path]]
         self.title = 'Complete'
         self.messages = [
                 "bpm       : %3.2f" % (self.game.player.score.bpm), 

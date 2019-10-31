@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-import mido
 
 import statistics 
 import csv
 import os
+from meowzok import mido
 
 
 class TimeSig:

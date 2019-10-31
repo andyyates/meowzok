@@ -86,9 +86,6 @@ def show_error_and_exit(error_text):
 def check_requirements():
 
     pygame_req = "0.0.0"
-#* libasound2-dev     (python-rtmidi needs asoundlib.h)
-    python_rtmidi_req = "0.0.0"
-    mido_req = "0.0.0"
     lilypond_req = "0.0.0"
 
 
@@ -108,16 +105,6 @@ def check_requirements():
     except (ImportError, AssertionError, ValueError) as e:
         missing_reqs("pygame", pygame_req, e)
 
-    try:
-        import rtmidi
-        assert rtmidi.release.name == 'python-rtmidi'
-    except (ImportError, AssertionError, ValueError) as e:
-        missing_reqs("python-rtmidi", python_rtmidi_req , e)
-
-    try:
-        import mido
-    except (ImportError, AssertionError, ValueError) as e:
-        missing_reqs("mido", mido_req, e)
 
     if shutil.which('lilypond') == None:
         missing_reqs("lilypond", lilypond_req, None)

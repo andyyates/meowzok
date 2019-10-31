@@ -380,7 +380,8 @@ class Game:
 
 
 
-                self.player.lives -= 1
+                if style.speed != 0:
+                    self.player.lives -= 1
                 if self.player.lives < 0 :
                     self.win = 0
                     self.alive = 0

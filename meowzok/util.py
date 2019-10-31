@@ -2,7 +2,6 @@ import pygame
 import os
 from pygame.locals import *
 import sys
-import mido
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -40,20 +39,5 @@ def wait_key():
 
 def format_score(score):   
     return str(int(score)).zfill(6)
-
-
-def get_midi_input_ports():
-    names = mido.get_input_names()
-    if len(names) > 0:
-        return names
-    else:
-        return None
-
-def get_midi_output_ports():
-    names = mido.get_output_names()
-    if len(names) > 0:
-        return names
-    else:
-        return None
 
 

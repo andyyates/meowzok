@@ -3,9 +3,11 @@
 from meowzok.menu import *
 from meowzok.util import *
 from meowzok.game import *
+from meowzok import midiio 
+
 from pygame.locals import *
-import mido
-import os, pygame
+import os, pygame, pygame.midi
+
 import random
 import sys
 import time
@@ -19,15 +21,56 @@ clock = pygame.time.Clock()
 
 midi_in = None
 midi_out = None
+input_device_id = None
+output_device_id = None
 screen = None
 event_get = None
 surface = None
 running = True
 
-
-def init_display():
+def debug(a):
+    print(a)
+    
+def open_midi_ports():
     global midi_in
     global midi_out
+    global input_device_id
+    global output_device_id
+
+    if midi_in:
+        debug("Midi in open, close midi in")
+        midi_in.close()
+        midi_in = None
+    if midi_out:
+        debug("Midi out open, close midi out")
+        midi_out.close()
+        midi_out = None
+    debug("getting input from settings")
+    input_device_id = midiio.get_input_device_id_by_name(style.midi_in_port)
+    if input_device_id == None:
+        debug("no input device from settings, using first device")
+        input_device_id = midiio.get_first_input_device_id()
+    if input_device_id == None:
+        debug("failed to get input device")
+        midi_in = None
+    else:
+        debug("Open input device")
+        midi_in = midiio.open_input(input_device_id)
+
+    debug("get output from settings")
+    output_device_id = midiio.get_output_device_id_by_name(style.midi_out_port)
+    if output_device_id == None:
+        debug("no output device from settings, use first device")
+        output_device_id = midiio.get_first_output_device_id()
+    if output_device_id == None:
+        debug("no output device")
+        midi_out = None
+    else:
+        debug("open output device")
+        midi_out = midiio.open_output(output_device_id)
+
+
+def init_display():
     global screen
     global event_get
     global surface
@@ -35,6 +78,7 @@ def init_display():
     style.screensize = (1000,100)
     pygame.display.init()
     pygame.font.init()
+    pygame.midi.init()
     pygame.display.set_caption('Kill the music')
 
     if style.fullscreen:
@@ -48,46 +92,6 @@ def init_display():
     pygame.fastevent.init()
     pygame.key.set_repeat(150,10)
     event_get = pygame.fastevent.get
-
-    pn = get_midi_input_ports()
-    if style.midi_in_port in pn:
-        pn = style.midi_in_port
-    else:
-        pn = [x for x in pn if x.lower().find('through') == -1]
-        if len(pn)>0:
-            style.midi_in_port = pn = pn[0]
-        else:
-            pn = None
-            ip = None
-    if pn == None :
-        midi_in = None
-        ipport = None
-    else:
-        ipport = pn 
-        print("Open midi in from ", pn)
-        midi_in = mido.open_input(pn)
-
-
-
-    pn = get_midi_output_ports()
-    if style.midi_out_port in pn:
-        pn = style.midi_out_port
-    else:
-        if not ipport in pn:
-            pn = ip
-            style.midi_out_port = pn
-        else:
-            pn = [x for x in pn if x.lower().find('through') == -1]
-            pn = pn[0]
-            style.midi_out_port = pn
-    if (pn == None):
-        midi_out = None
-    else:
-        print("Open midi out from ", pn)
-        midi_out = mido.open_output(pn)
-
-    if midi_out:
-        midi_out.send(mido.Message(type="control_change", control=122, value=0))
 
 
     surface = pygame.Surface(screen.get_size())
@@ -119,8 +123,8 @@ def main_loop(b):
 
         #surface.blit(layout.surface, (0,0))
 
-        for msg in note_off_cue:
-            midi_out.send(msg)
+        for nn in note_off_cue:
+            midi_out.note_off(nn)
         note_off_cue.clear()
 #        if(hasattr(b.cs, 'dot_drawer')):
 #            if(hasattr(b.cs, 'active_notes')):
@@ -155,93 +159,52 @@ def main_loop(b):
 
         if style.changed_in_menu == True:
             style.changed_in_menu = False
-
-            if midi_in == None or style.midi_in_port != midi_in.name:
-                old_in_name = None
-                if midi_in:
-                    old_in_name = midi_in.name+""
-                    midi_in.close()
-                try:
-                    print("Open midi in from ", style.midi_in_port)
-                    midi_in = mido.open_input(style.midi_in_port)
-                except:
-                    print("Error trying to open port ", style.midi_in_port)
-                    if old_in_name:
-                        style.midi_in_port = old_in_name
-                        print("Attempt to re-open ", style.midi_in_port)
-                        midi_in = mido.open_input(style.midi_in_port)
-
-            if midi_out == None or style.midi_out_port != midi_out.name:
-                old_out_name = None
-                if midi_out:
-                    old_out_name = midi_out.name+""
-                    midi_out.send(mido.Message(type="control_change", control=122, value=127))
-                    midi_out.close()
-                try:
-                    print("Open midi out from ", style.midi_out_port)
-                    midi_out = mido.open_output(style.midi_out_port)
-                except:
-                    print("Error trying to open port ", style.midi_out_port)
-                    if old_out_name:
-                        style.midi_out_port = old_out_name
-                        print("Attempt to re-open ", style.midi_out_port)
-                        midi_out = mido.open_output(style.midi_out_port)
-                if midi_out:
-                    midi_out.send(mido.Message(type="control_change", control=122, value=0))
-
+            open_midi_ports()
             style.changed_in_main = True
         
         if midi_in:
-            msg = midi_in.poll()
-            while(msg):
-                if msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
-                    #print("NOTE off ", nn, msg.type)
-                    nn = msg.note
-                    process_note_off(nn)
-                    midi_out.send(msg)
-                elif msg.type == "note_on":
-                    nn = msg.note
-                    if not nn in notes_down:
-                        notes_down.append(nn)
-                        n1 = Note()
-                        n2 = Note()
-                        n1.nn = nn
-                        n2.nn = nn
-                        n1.clef = 0
-                        n2.clef = 1
-                        r = b.note_down(nn, notes_down)
-                        if r == 0:
-                            print("make a horrid noise")
-                            for i in range(0,4):
-                                nn = random.randint(44,127)
-                                midi_out.send(mido.Message(type='note_on', note=nn, velocity=127))
-                                note_off_cue.append(mido.Message(type='note_off', note=nn, velocity=127))
-                        else:
-                            midi_out.send(msg)
-                            if hasattr(r,'pop'):
-                                for n in r:
-                                    process_note_off(n.nn)
-
-
-
-                msg = midi_in.poll()
+            #print("Polling..")
+            while(midi_in.poll()):
+                print("Poll true")
+                ii = 0
+                for evt in midiio.read_events(midi_in):
+                    ii += 1
+                    print("Cycle events ", ii)
+                    print (evt)
+                    if evt.command == "note_off" or (evt.command == "note_on" and evt.data2 == 0):
+                        print("NOTE off ", evt.data1)
+                        nn = evt.data1
+                        process_note_off(nn)
+                        if style.midi_through and midi_out:
+                            midi_out.note_off(nn)
+                    elif evt.command == "note_on":
+                        nn = evt.data1
+                        if style.midi_through and midi_out:
+                            midi_out.note_on(nn, evt.data2)
+                        if not nn in notes_down:
+                            notes_down.append(nn)
+                            r = b.note_down(nn, notes_down)
+                            if r == 0:
+                                print("make a horrid noise")
+                                for i in range(0,4):
+                                    nn = random.randint(44,127)
+                                    midi_out.note_on(nn, random.randint(90,120))
+                                    note_off_cue.append(nn)
+                            else:
+                                if hasattr(r,'pop'):
+                                    for n in r:
+                                        process_note_off(n.nn)
         else:
             time.sleep(1)
-            pn = get_midi_input_ports()
-            if pn != None and len(pn)>0:
-                pn = pn[0]
-                midi_in = mido.open_input(pn)
+            pn = midiio.get_first_input_device_id()
+            if pn != None:
+                open_midi_ports()
                 b.cs = MainMenu()
 
         clock.tick(30)
 
-        r = b.advance()
-        #print (r)
-        if hasattr(r, 'pop'):
-            print("Messaging from advance :", r)
-            for n in r:
-                midi_out.send(mido.Message(type='note_on', note=n.nn, velocity=127))
-                note_off_cue.append(mido.Message(type='note_off', note=n.nn, velocity=127))
+        b.advance()
+
         b.draw(surface)
         screen.blit(surface, (0, 0))
         pygame.display.update()
@@ -257,7 +220,6 @@ def cleanup():
     #local on
     if midi_out:
         print("cleanup midi out")
-        midi_out.send(mido.Message(type="control_change", control=122, value=127))
         midi_out.close()
 
     if midi_in:
@@ -267,6 +229,8 @@ def cleanup():
     print("cleanup display")
     pygame.display.quit()
     print("display closed")
+    pygame.midi.quit()
+    print("midi closed")
     pygame.quit()
     print("toodles")
 

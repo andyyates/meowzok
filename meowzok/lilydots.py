@@ -16,6 +16,7 @@ from meowzok.util import *
 from meowzok.midifile import Note
 
 debug_always_load_cache = False
+debug_never_load_cache = True
 print_debug_msgs = False
 
 
@@ -50,6 +51,7 @@ class Page():
 
 class LilyDots():
     def __init__(self, game_name, midi_file_path, bars_per_page, notes, time_sig, size):
+        self.scale = 1
         self.bars_per_page = bars_per_page
         self.notes = notes
         self.time_sig = time_sig
@@ -124,7 +126,11 @@ class LilyDots():
             print("", self.midi_file_path, " not exist")
             return False
 
+        if debug_never_load_cache == True:
+            return False
+
         midi_file_mtime = os.path.getmtime(self.midi_file_path)
+
 
 #        for src_dirs in [Path().absolute()]:
 #            for f in os.listdir(src_dirs):
@@ -295,8 +301,11 @@ class LilyDots():
         }
         """ 
 
+
         staff_template = """
-                \n\n\\new Staff { \\clef "%s" \\key %s \\time %d/%d 
+                \n\n\\new Staff { \\numericTimeSignature \\clef "%s" \\time %d/%d \\key %s 
+                \\override Score.BarNumber.break-visibility = ##(#t #t #t)
+                \\set Score.currentBarNumber = #%d
                 \\override Voice.NoteHead.color = #(x11-color 'red)
                 \\override Voice.Stem.color = #(x11-color 'red)
                 %s
@@ -404,10 +413,11 @@ class LilyDots():
                 keysig += " \\minor"
 
             body = ""
+            current_bar = p.i * self.bars_per_page+1
             if note_body[0]!="":
-                body += staff_template % ("treble", keysig, self.time_sig.numerator,self.time_sig.denominator, note_body[0])
+                body += staff_template % ("treble", self.time_sig.numerator,self.time_sig.denominator, keysig, current_bar, note_body[0])
             if note_body[1]!="":
-                body +=staff_template % ("bass", keysig, self.time_sig.numerator,self.time_sig.denominator, note_body[1])
+                body +=staff_template % ("bass", self.time_sig.numerator,self.time_sig.denominator, keysig, current_bar, note_body[1])
             body = lily_template % (body) 
 
             opfn = self.make_cache_file_name(p.i)

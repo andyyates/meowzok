@@ -33,6 +33,9 @@ On ubuntu/debian
 
     sudo pip3 install pygame python-rtmidi mido
 
+On mint
+    TODO: sudo apt-get install python-setuptools 
+
 * you will also need a physical 88 key midi keyboard - smaller keyboards and a virtual keyboard are on me todo list
 
 Running
