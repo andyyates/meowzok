@@ -12,6 +12,7 @@ class Stylei:
         self.changed_in_main = False
         self.changed_in_menu = False
         self.config_file_path = os.path.expanduser("~/.config/meowzok.conf")
+        self.fullscreen = False
         self.lives = 10
         self.main_bg = (255,255,255)
         self.menu_item_bg = (240,240,240)
@@ -40,10 +41,8 @@ class Stylei:
 
     def resize_big(self):
         print("resize big")
-        modes = pygame.display.list_modes()
-        for m in modes[2:]:
-            self.resize(m[0],m[1])
-            return
+        m = pygame.display.Info()
+        self.resize(m.current_w - 20, m.current_h - 100)
 
 
     def resize(self, w,h):

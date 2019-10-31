@@ -267,7 +267,7 @@ class SettingsMenu(Menu):
             s = "True"
         else:
             s = "False"
-        self.add_menu_item(title="midi through: %s " % (s), action=[OptionsMenu, ["midi_through",["True","False"], "midi_through", s]])
+        self.add_menu_item(title="midi through: %s " % (s), action=[OptionsMenu, [self, "midi_through",["True","False"], "midi_through", s]])
 
 
 
