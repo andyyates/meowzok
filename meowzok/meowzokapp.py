@@ -120,36 +120,25 @@ def main_loop(b):
     note_off_cue = []
 
     while running:
-        #print("Running")
         events = event_get()
-
-        #surface.blit(layout.surface, (0,0))
 
         for nn in note_off_cue:
             midi_out.note_off(nn)
         note_off_cue.clear()
-#        if(hasattr(b.cs, 'dot_drawer')):
-#            if(hasattr(b.cs, 'active_notes')):
-#                for n in display_notes:
-#                    if n.consumed == 0:
-#                        #n.x = b.cs.active_notes[0][0].x
-#                        b.cs.dot_drawer.draw_note(n, surface, alt_sprite = layout.sprites.splat, alt_sprite_sharp = layout.sprites.splat_sharp)
-#            else:
-#                for n in display_notes:
-#                    if n.consumed == 0:
-#                        n.draw(surface, alt_sprite = layout.sprites.splat, alt_sprite_sharp = layout.sprites.splat_sharp)
 
         for e in events:
+            r = None
             if e.type in [QUIT]:
                 running = False
             elif e.type in [KEYDOWN]:
                 r = b.key_down(e.key)
-                if r == "quit":
-                    running = False
-                elif r != None:
-                    print("Unknown menu action ", r)
             elif e.type in [MOUSEBUTTONDOWN]:
-                b.mouse_down(e.pos)
+                r = b.mouse_down(e.pos)
+
+            if r == "quit":
+                running = False
+            elif r != None:
+                print("Unknown menu action ", r)
 
         if running == False:
             break
@@ -185,18 +174,9 @@ def main_loop(b):
                                 if hasattr(r,'pop'):
                                     for n in r:
                                         process_note_off(n.nn)
-        else:
-            pass
-            #time.sleep(1)
-            #pn = midiio.get_first_input_device_id()
-            #if pn != None:
-            #    open_midi_ports()
-            #    b.cs = MainMenu()
 
         clock.tick(30)
-
         b.advance()
-
         b.draw(surface)
         screen.blit(surface, (0, 0))
         pygame.display.update()
@@ -229,7 +209,6 @@ def run(argv):
         cleanup()
     elif argc > 1:
         if sys.argv[1] == "test":
-            #fl = os.listdir("tests")
             if argc > 2:
                 __import__("tests."+sys.argv[2])
                 exit()

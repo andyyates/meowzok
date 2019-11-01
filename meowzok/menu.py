@@ -106,7 +106,6 @@ class  Menu:
         
     def mouse_down(self, pos):
         items = [x for x in self.menu_items_rects if x[0].contains(pos)]
-        #print(items)
         if len(items) > 0:
             return items[0][1]
 
