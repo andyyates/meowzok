@@ -61,9 +61,16 @@ class Game:
         self.page_i = 0
         self.notes_down = None
         self.keyboard = Keyboard()
-        self.load_high_score()
+        self.high_scores = self.load_high_scores()
+        if len(self.high_scores)>0:
+            self.high_score = max(self.high_scores)
+        else:
+            self.high_score = Score()
+
 
     def write_high_score_file(self):
+        if self.player.score.grade() == 0:
+            return
         with open(high_scores_filename(),'a') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             row = []
@@ -75,16 +82,26 @@ class Game:
             row.append(self.player.score.avaliable_notes)
             writer.writerow(row)
 
-    def load_high_score(self):
+
+    def load_high_scores(self):
+        print("loading high scores")
         lvlname = self.midifile.name
         self.high_score = Score()
+        scores = []
         if os.path.exists(high_scores_filename()):
+            print("path ok")
             with open(high_scores_filename(), 'r') as fd:
+                print("with me file")
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
                     if len(row) == 6:
                         if row[0] == lvlname:
+                            print("loading a row")
                             score = Score()
+                            try:
+                                score.date = datetime.datetime.fromisoformat(row[1])
+                            except:
+                                print("Error converting date ", row[1])
                             try:
                                 score.bpm = float(row[2])
                             except:
@@ -102,16 +119,14 @@ class Game:
                             except:
                                 print("Error loading avaliable_notes count ", row[3])
 
-                            #print("loaded score, check its best")
-                            #score.printit()
-                            #self.high_score.printit()
-                            self.high_score = max(self.high_score, score)
+                            scores.append(score)
+        scores.sort()
+        scores.reverse()
+        print("Have ", len(scores), " scores")
+        return scores
+
 
     
-
-    def retry_level(self):
-        self.player.reset_for_level()
-        self.__setup_level()
 
     def __setup_level(self):
         self.__active_notes = self.midifile.active_notes
@@ -120,6 +135,7 @@ class Game:
             for n in nl:
                 n.fail = -1
                 self.player.score.avaliable_notes += 1
+        self.score_saved = False
         self.active_i = 0
         self.win = 0
         self.alive = True
@@ -183,43 +199,133 @@ class Game:
 
 
     def draw(self, surface):
-        if self.last_drawn_page != self.page_i:
-            self.notes_down = None
-            self.dot_drawer.draw_music(self.dot_surface, self.page_i)
-        self.last_drawn_page = self.page_i
-
         surface.fill(style.main_bg)
         dim = surface.get_rect()
-        surface.blit(self.dot_surface, (self.stave_position))
-        
-        isbad = False
-        self.dot_drawer.blob_note(surface, self.active_i, None, (50,50,50), self.stave_position)
-        if self.notes_down:
-            acti, notes = self.notes_down
-            for n in notes:
-                if hasattr(n,'bad') and n.bad:
-                    isbad = True
-                    self.dot_drawer.blob_note(surface, acti, n, (200,0,0), offset=self.stave_position)
-                else:
-                    self.dot_drawer.blob_note(surface, acti, n, (0,200,0), offset=self.stave_position)
-                    self.notes_down = None
-
-        if style.speed != 0:
-            crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
-            if crash:
-                self.alive = False
 
         if self.alive:
+            if self.last_drawn_page != self.page_i:
+                self.notes_down = None
+                self.dot_drawer.draw_music(self.dot_surface, self.page_i)
+            self.last_drawn_page = self.page_i
+
+            surface.blit(self.dot_surface, (self.stave_position))
+            
+            isbad = False
+            self.dot_drawer.blob_note(surface, self.active_i, None, (50,50,50), self.stave_position)
+            if self.notes_down:
+                acti, notes = self.notes_down
+                for n in notes:
+                    if hasattr(n,'bad') and n.bad:
+                        isbad = True
+                        self.dot_drawer.blob_note(surface, acti, n, (200,0,0), offset=self.stave_position)
+                    else:
+                        self.dot_drawer.blob_note(surface, acti, n, (0,200,0), offset=self.stave_position)
+                        self.notes_down = None
+
+            if style.speed != 0:
+                crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
+                if crash:
+                    self.alive = False
+
             title = style.font.render(self.midifile.name, 1, style.title_fg)
+            textpos = title.get_rect()
+            textpos.left = textpos.height
+            textpos.top = 0
+            surface.blit(title, textpos)
+
+            msg = "HI bpm:%3.2f  bum notes:%d  played:%d%%" % (self.high_score.bpm, self.high_score.errors, self.high_score.percent_played())
+            text = style.font.render(msg, 1, style.bpm)
+            textpos = text.get_rect()
+            textpos.right = dim.width
+            textpos.top = 0
+            surface.blit(text, textpos)
+
+
+            pad = int(dim.w / 10)
+            
+            h = textpos.height*2
+            if style.show_helper_keyboard:# and ( style.speed == 0 or isbad ):
+                y = dim.height-h
+                self.keyboard.draw(surface, pygame.Rect(0, y, dim.width,h))
+            else:
+                y = dim.height
+
+            msg = "bpm:%3.2f  bum notes:%d  played:%d%%" % (self.player.score.bpm, self.player.score.errors, self.player.score.percent_played())
+            text = style.font.render(msg, 1, style.bpm)
+            textpos = text.get_rect()
+            textpos.right = dim.width
+            textpos.bottom = y
+            surface.blit(text, textpos)
+
+            msg = "\u2665"*self.player.lives
+            text = style.font.render(msg, 1, style.bpm)
+            textpos = text.get_rect()
+            textpos.left = 0
+            textpos.bottom = y
+            surface.blit(text, textpos)
+
+
+
+
+
+
         else:
             if self.win:
                 title = style.font.render(self.midifile.name + " COMPLETE!", 1, style.title_fg)
             else:
                 title = style.font.render(self.midifile.name + "GAME OVER", 1, style.title_fg)
-        textpos = title.get_rect()
-        textpos.left = textpos.height
-        textpos.top = 0
-        surface.blit(title, textpos)
+            if self.score_saved == False:
+                self.write_high_score_file()
+                self.score_saved = True
+
+            textpos = title.get_rect()
+            self.yy = textpos.left = textpos.height
+            textpos.top = 0
+            surface.blit(title, textpos)
+
+            self.yy += textpos.height
+            n = style.font.render("      date                  bpm             error   grade", 1, style.title_fg)
+            tpn = n.get_rect()
+            tpn.centerx = dim.centerx
+            tpn.top = self.yy
+            surface.blit(n, tpn)
+
+            self.yy += textpos.height
+
+
+            def print_score(s, rank):
+                self.yy += textpos.height
+                if hasattr(s, 'date'):
+                    d = s.date.strftime("%d-%h-%y %H:%M")
+                else:
+                    d = "you>"
+                bpm = "%3.2f" % (s.bpm)
+                n = style.font.render("%4d  %15s      %6s          %3d     %3d " % (rank, d, bpm, s.errors, s.grade()), 1, style.title_fg)
+                tpn = n.get_rect()
+                tpn.centerx = dim.centerx
+                tpn.top = self.yy
+                surface.blit(n, tpn)
+
+            score_printed = False
+            rank = 1
+            for s in self.high_scores:
+                if rank < 11:
+                    if score_printed == False and self.player.score.grade() > s.grade():
+                        print_score(self.player.score, rank)
+                        rank += 1
+                        score_printed = True
+                if rank < 11:
+                    print_score(s, rank)
+                rank += 1
+
+            if score_printed == False:
+                self.yy += textpos.height
+                self.yy += textpos.height
+                print_score(self.player.score, rank)
+
+
+
+
 
         self.menu_items_rects = []
         msg = "\u2190"
@@ -229,44 +335,6 @@ class Game:
         cp.top = 0
         surface.blit(text, cp)
         self.menu_items_rects.append([cp, self.menu_up])
-
-
-
-
-
-        msg = "HI bpm:%3.2f  bum notes:%d  played:%d%%" % (self.high_score.bpm, self.high_score.errors, self.high_score.percent_played())
-        text = style.font.render(msg, 1, style.bpm)
-        textpos = text.get_rect()
-        textpos.right = dim.width
-        textpos.top = 0
-        surface.blit(text, textpos)
-
-
-        pad = int(dim.w / 10)
-        
-        h = textpos.height*2
-        if style.show_helper_keyboard:# and ( style.speed == 0 or isbad ):
-            y = dim.height-h
-            self.keyboard.draw(surface, pygame.Rect(0, y, dim.width,h))
-        else:
-            y = dim.height
-
-        msg = "bpm:%3.2f  bum notes:%d  played:%d%%" % (self.player.score.bpm, self.player.score.errors, self.player.score.percent_played())
-        text = style.font.render(msg, 1, style.bpm)
-        textpos = text.get_rect()
-        textpos.right = dim.width
-        textpos.bottom = y
-        surface.blit(text, textpos)
-
-        msg = "\u2665"*self.player.lives
-        text = style.font.render(msg, 1, style.bpm)
-        textpos = text.get_rect()
-        textpos.left = 0
-        textpos.bottom = y
-        surface.blit(text, textpos)
-
-
-
 
 
 

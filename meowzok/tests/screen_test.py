@@ -21,9 +21,12 @@ else:
 
 import unittest
 grunning = False
-for f in os.listdir(style.style.midi_dir):
-    gtestmidifile = style.style.midi_dir+"/"+f
-    break
+#for f in os.listdir(style.style.midi_dir):
+#    gtestmidifile = style.style.midi_dir+"/"+f
+#    print ("using ", gtestmidifile, " as test midi file")
+#    break
+
+gtestmidifile = style.style.midi_dir+"/Tetris.mid"
 
 class TestScreen(unittest.TestCase):
 
@@ -33,29 +36,32 @@ class TestScreen(unittest.TestCase):
 
     def setUp(self):
         self.b = menu.B()
-        self.lvls = game.load_midi_file(gtestmidifile)
-        self.game = game.Game(self.lvls)
+        main = menu.MainMenu()
+        self.midi_file = midifile.MKMidiFile(gtestmidifile)
+        self.game = game.Game(main, self.midi_file)
     
     @classmethod
     def tearDownClass(self):
         app.cleanup()
 
-
-
     def gameSelect(self):
-        self.b.cs = menu.GameSelect(None, "/foo/bar/baz")
+        self.b.cs = menu.GameSelect(None, gtestmidifile)
         app.running = grunning
         app.main_loop(self.b)
 
-#    def levelComplete(self):
-#        self.b.cs = menu.LevelComplete(self.game)
-#        app.running = grunning
-#        app.main_loop(self.b)
-#
-#    def levelFail(self):
-#        self.b.cs = menu.LevelFail(self.game)
-#        app.running = grunning
-#        app.main_loop(self.b)
+    def levelFail(self):
+        self.b.cs = self.game
+        self.game.alive = False
+        self.game.win = False
+        app.running = True
+        app.main_loop(self.b)
+
+    def levelComplete(self):
+        self.b.cs = self.game
+        self.game.alive = False
+        self.game.win = True
+        app.running = True
+        app.main_loop(self.b)
 
     def mainMenu(self):
         self.b.cs = menu.MainMenu()
@@ -80,11 +86,12 @@ class TestScreen(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestScreen("gameSelect"))
-    suite.addTest(TestScreen("mainMenu"))
-    suite.addTest(TestScreen("midiMenu"))
-    #suite.addTest(TestScreen("pathPicker"))
-    suite.addTest(TestScreen("settingsMenu"))
+    #suite.addTest(TestScreen("gameSelect"))
+    #suite.addTest(TestScreen("mainMenu"))
+    #suite.addTest(TestScreen("midiMenu"))
+    suite.addTest(TestScreen("levelComplete"))
+    #suite.addTest(TestScreen("levelFail"))
+    #suite.addTest(TestScreen("settingsMenu"))
     return suite
 
 if __name__ == "__main__":

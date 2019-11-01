@@ -125,6 +125,7 @@ class LilyDots():
             return False
 
         if debug_never_load_cache == True:
+            print("debug never load cache is true")
             return False
 
         midi_file_mtime = os.path.getmtime(self.midifile.path)
@@ -142,6 +143,7 @@ class LilyDots():
             p.csv_path = self.make_cache_file_name(p.i)+".csv"
             for c in [p.png_path, p.csv_path]:
                 if not os.path.exists(c):
+                    print("path ", c, " not exist")
                     return False
                 mtime = os.path.getmtime(c)
                 if mtime < midi_file_mtime:
@@ -149,6 +151,7 @@ class LilyDots():
 
         if debug_always_load_cache == False:
             if out_of_date:
+                print("debug always, but your cache out of date mate")
                 return False
 
 

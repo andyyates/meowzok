@@ -1,5 +1,11 @@
 ----TODO
 
+add end of level page in game
+- play again
+- show score
+- show hi score
+- show graph of previous scores
+
 add a 'no lives' option - so you can hammer a loop without getting dead
 
 allow loop over parts you can't play

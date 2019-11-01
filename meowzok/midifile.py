@@ -122,7 +122,7 @@ class MKMidiFile():
                         try:
                             selt.time_sig.key_sig_is_major = bool(v)
                         except:
-                            print("Coult not convert %s to bool" %v)
+                            print("Could not convert %s to bool" %v)
                     else:
                         print("Unknown row in " + fn)
 
