@@ -13,6 +13,7 @@ class Stylei:
         self.changed_in_menu = False
         self.config_file_path = os.path.expanduser("~/.config/meowzok.conf")
         self.fullscreen = False
+        self.crash_piano = False
         self.lives = 10
         self.main_bg = (255,255,255)
         self.menu_item_bg = (240,240,240)
@@ -67,6 +68,10 @@ class Stylei:
                 writer.writerow(["fullscreen", "True"])
             else:
                 writer.writerow(["fullscreen", "False"])
+            if self.crash_piano:
+                writer.writerow(["crash_piano", "True"])
+            else:
+                writer.writerow(["crash_piano", "False"])
 
     def load(self):
         if os.path.exists(self.config_file_path):
@@ -85,6 +90,8 @@ class Stylei:
                             self.midi_dir = v
                         elif k=="show_helper_keyboard":
                             self.show_helper_keyboard = v == "True"
+                        elif k=="crash_piano":
+                            self.crash_piano = v == "True"
                         elif k=="speed":
                             self.speed = int(v)
                         elif k=="fullscreen":

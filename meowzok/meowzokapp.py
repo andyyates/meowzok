@@ -176,7 +176,7 @@ def main_loop(b):
                         if not nn in notes_down:
                             notes_down.append(nn)
                             r = b.note_down(nn, notes_down)
-                            if r == 0:
+                            if r == 0 and style.crash_piano:
                                 for i in range(0,10):
                                     nn = random.randint(44,127)
                                     midi_out.note_on(nn, random.randint(90,120))

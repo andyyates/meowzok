@@ -123,8 +123,6 @@ class  Menu:
         elif key == pygame.K_LEFT or key == pygame.K_ESCAPE:
             if hasattr(self, "menu_up") and self.menu_up != None:
                 return self.menu_up
-            else:
-                return "quit"
         else:
             return key
 
@@ -234,6 +232,8 @@ class SettingsMenu(Menu):
                 style.speed = self.speeds.index(set_value)
             elif set_key == "midi_through":
                 style.midi_through = set_value == "True"
+            elif set_key == "crash_piano":
+                style.crash_piano = set_value == "True"
             elif set_key == "set_midi_dir":
                 style.midi_dir = set_value
             else:
@@ -273,6 +273,11 @@ class SettingsMenu(Menu):
         self.add_menu_item(title="midi through: %s " % (s), action=[OptionsMenu, [self, "midi_through",["True","False"], "midi_through", s]])
 
 
+        if style.crash_piano:
+            s = "True"
+        else:
+            s = "False"
+        self.add_menu_item(title="crash piano: %s " % (s), action=[OptionsMenu, [self, 'crash_piano', ["True","False"], "crash_piano", s]])
 
 
     def draw(self, surface):
@@ -281,10 +286,17 @@ class SettingsMenu(Menu):
             self.__rebuild_menu()
         super().draw(surface)
 
+class QuitMenu(Menu):
+    def __init__(self,main_menu):
+        super().__init__(None)
+        self.title = "Exit ?"
+        self.add_menu_item(title="no", action=main_menu)
+        self.add_menu_item(title="yes", action="quit")
 
 class MainMenu(Menu):
     def __init__(self):
-        super().__init__(None)
+        quitm = QuitMenu(self)
+        super().__init__(quitm)
         self.title = "Meowzok"
         self.file_i = 0
         self.page = 0
