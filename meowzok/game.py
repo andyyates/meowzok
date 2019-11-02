@@ -113,11 +113,11 @@ class Game:
                             try:
                                 score.played_notes = int(row[4])
                             except:
-                                print("Error loading played_notes count ", row[3])
+                                print("Error loading played_notes count ", row[4])
                             try:
                                 score.avaliable_notes = int(row[5])
                             except:
-                                print("Error loading avaliable_notes count ", row[3])
+                                print("Error loading avaliable_notes count ", row[5])
 
                             scores.append(score)
         scores.sort()
@@ -134,7 +134,7 @@ class Game:
         for nl in self.__active_notes:
             for n in nl:
                 n.fail = -1
-                self.player.score.avaliable_notes += 1
+        self.player.score.avaliable_notes = len(self.__active_notes)
         self.score_saved = False
         self.active_i = 0
         self.win = 0
@@ -412,8 +412,9 @@ class Game:
                     for n in rv:
                         if n.fail == -1:
                             n.fail = 0
+                        #prevent a high score from playing the same section over and over
+                        self.player.score.played_notes = max(self.player.score.played_notes, self.active_i)
                         n.bad = 0
-                        self.player.score.played_notes += 1
                     total_ticks = pygame.time.get_ticks() - self.timer_first_note_down
                     total_beats = rv[0].time / self.midifile.time_sig.ticks_per_beat * (4 / self.midifile.time_sig.denominator)
                     if total_ticks > 0:

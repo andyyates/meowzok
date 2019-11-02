@@ -118,7 +118,7 @@ class LilyDots():
         
 
     def load_from_cache(self):
-        print("loading from cache")
+        print("loading from cache", self.midifile.path, self.make_cache_file_name(0))
         out_of_date = False
         if not os.path.exists(self.midifile.path):
             print("", self.midifile.path, " not exist")
@@ -204,7 +204,7 @@ class LilyDots():
                 print("Rendering thread died")
                 return
             time.sleep(0.1)
-            print("Waiting for images to load")
+            print(".", end='')
         dim = surface.get_rect()
         img = page.img
         img_dim = img.get_rect()
@@ -270,7 +270,10 @@ class LilyDots():
         p = self.pages[n.page_no]
         if not p.loaded:
             return None
+        #print("---get note pos---")
+        #print(n.page_no, n.number_in_page)
         xpos = p.note_xs[n.number_in_page]
+        #print(p.note_xs)
         return xpos
 
 
@@ -454,7 +457,7 @@ class LilyDots():
             FNULL = open(os.devnull, 'w')
             popencmd = ['lilypond', '--png']
             popencmd.append(p.ly_name)
-            print ("Run subprocess cmd", popencmd)
+            print ("_", end='')
             process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
             output, err = process.communicate()
             rc = process.returncode

@@ -25,7 +25,7 @@ class  Menu:
         self.menu_selection = 0
         self.menu = []
         self.title = "NO TITLE"
-
+    
     def add_menu_item(self, title, action, nn=None):
         m=MenuItem(len(self.menu), title, action)
         m.nn = nn
@@ -145,20 +145,17 @@ for f in os.listdir(main_dir):
     
 
 class GameSelect(Menu):
+
     def __init__(self, up, path):
         super().__init__(up)
         filename = os.path.basename(path)
         self.title = filename.replace(".mid", "")
-        self.midi_file = MKMidiFile(path)
         self.menu = []
-        self.add_menu_item("play song", [Game, [self, self.midi_file, True]])
+        self.add_menu_item("play song", [Game, [self, MKMidiFile(path), True]])
         for g in games:
             title = " ".join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', g[0])).split()[1:])
-            self.add_menu_item(title, [g[1], [self, self.midi_file]])
+            self.add_menu_item(title, [g[1], [self, MKMidiFile(path)]])
 
-    def advance(self):
-        self.midi_file.name = self.midi_file.orig_name
-        super().advance()
 
 
 class OptionsMenu(Menu):
@@ -295,35 +292,89 @@ class QuitMenu(Menu):
 class MainMenu(Menu):
     def __init__(self):
         quitm = QuitMenu(self)
+        self.dir = style.midi_dir
         super().__init__(quitm)
         self.title = "Meowzok"
         self.file_i = 0
         self.page = 0
-        self.__rebuild_menu()
+        self.rebuild_menu()
 
-    def __rebuild_menu(self):
+    def rebuild_menu(self):
         self.menu = []
         self.current_path = style.midi_dir
-        if os.path.exists(style.midi_dir):
-            a = [ x for x in sorted(os.listdir(style.midi_dir)) if x.endswith('.mid')]
-            for p in a:
-                path = style.midi_dir+"/"+p
-                name = re.sub("[^A-Za-z0-9]"," ",p.replace(".mid",""))
-                self.add_menu_item(title=name, action=[GameSelect, [self, path]])
+
+        self.add_menu_item(title=">..", action=[self.change_dir, [".."]])
+        if os.path.exists(self.dir):
+            for f in sorted(os.listdir(self.dir)):
+                if os.path.isdir(self.dir+"/"+f):
+                    self.add_menu_item(title=">"+f, action=[self.change_dir, [f]])
+            for f in sorted(os.listdir(self.dir)):
+                if not os.path.isdir(self.dir+"/"+f):
+                    if f.endswith(".mid"):
+                        path = self.dir+"/"+f
+                        name = re.sub("[^A-Za-z0-9]"," ",f)#.replace(".mid",""))
+                        self.add_menu_item(title=" "+name, action=[GameSelect, [self, path]])
 
         self.add_menu_item(title="",action="")
         self.add_menu_item(title="settings",action=[SettingsMenu, [self]])
 
     def draw(self,surface):
         if self.current_path != style.midi_dir:
-            self.__rebuild_menu()
+            self.rebuild_menu()
         super().draw(surface)
+
+
+    def change_dir(self, f):
+        print("CHange dir ", self.dir, f)
+        self.dir = os.path.realpath(os.path.join(self.dir+"/", f))
+        print("Value ", self.dir)
+        self.rebuild_menu()
+        self.menu_selection = 0
+        if self.dir != style.midi_dir:
+            self.messages = [self.dir]
+        else:
+            self.messages = []
+        return self
+
+
+    def key_down(self, key):
+        if key == pygame.K_LEFT:
+            if self.dir != style.midi_dir:
+                if len(self.dir) > len(style.midi_dir):
+                    self.change_dir("..")
+                    return None
+                else:
+                    self.change_dir(style.midi_dir)
+                    return None
+        return super().key_down(key)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class B:
     def __init__(self ):
         self.cs = MainMenu()
 
+    def change_menu(self, numenu):
+        self.cs = numenu
+        if hasattr(numenu, 'on_open'):
+            numenu.on_open()
 
     def __act(self,r):
         #if hasattr(self.cs, 'act'):
@@ -331,14 +382,14 @@ class B:
         if r == None:
             return
         elif hasattr(r, 'menu'):
-            self.cs = r
+            self.change_menu(r)
             return None
         if callable(r):
-            self.cs = r()
+            self.change_menu(r())
             return None
         elif hasattr(r, 'pop'):
             if callable(r[0]):
-                self.cs = r[0](*r[1])
+                self.change_menu(r[0](*r[1]))
                 return None
         return r
 

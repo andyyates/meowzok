@@ -9,7 +9,10 @@ playing various parts of the music.
 
 After playing piece of music a score is calculated from the BPM you played at
 and the number of bum notes you hit. The scores are recorded so you can beat 
-your hi scores and give yourself a pat on the back. Well done
+your hi scores and give yourself a pat on the back. 
+
+To avoid confusion, I'm calling scores grades when i mean a score as in a number
+that represents your ability, yadda. I know a grade is something else. well
 
 The engraving is done by Lilypond and so it looks like real actual sheet music. 
 it's got clefs and accidentals and those beams and them rests in various lengths. 

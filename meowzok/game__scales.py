@@ -41,7 +41,7 @@ class Game_Scale(Game):
 
 
         mf.active_notes = nnotes
-        super().__init__(up, mf, cacheable=False)
+        super().__init__(up, mf, cacheable=True)
         print("init ", mf.name)
 
 
