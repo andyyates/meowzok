@@ -210,14 +210,16 @@ class LilyDots():
         img_dim = img.get_rect()
         scaled = self.pages[page_i].img
 
-        if img_dim.width > dim.width:
-            self.scale = dim.width / img_dim.width 
-            w = int(img_dim.width*self.scale)
-            h = int(img_dim.height*self.scale)
-            scaled = pygame.transform.scale(scaled, (w,h))
-            img_dim = scaled.get_rect()
-        else:
-            self.scale = 1
+        print("Dim ", dim)
+
+        #if img_dim.width > dim.width:
+        #    self.scale = dim.width / img_dim.width 
+        #    w = int(img_dim.width*self.scale)
+        #    h = int(img_dim.height*self.scale)
+        #    scaled = pygame.transform.scale(scaled, (w,h))
+        #    img_dim = scaled.get_rect()
+        #else:
+        #    self.scale = 1
 
         self.left_pad = int((dim.width - img_dim.width)/2)
         self.top_pad = int((dim.height - img_dim.height)/2)

@@ -147,12 +147,17 @@ class Game:
         self.page_i = 0
         
 
-    def __rebuild_dots(self):
+    def resize(self):
         w,h = style.screensize
         self.stave_position = pygame.Rect(0,int(h/4),w,int(h/2))
-        self.dot_drawer = style.dot_class(self.midifile)
         self.dot_surface = pygame.Surface((self.stave_position.w,self.stave_position.h))
+        self.last_drawn_page = -1
+
+    def __rebuild_dots(self):
+        self.resize()
+        self.dot_drawer = style.dot_class(self.midifile)
         self.dot_surface.convert()
+        self.last_drawn_page = -1
 
 
     def goto_page(self, time):

@@ -17,6 +17,7 @@ import time
 import meowzok.lilydots as Dots
 style.dot_class = Dots.LilyDots
 
+event_get = pygame.fastevent.get
 clock = pygame.time.Clock()
 
 midi_in = None
@@ -24,7 +25,6 @@ midi_out = None
 input_device_id = None
 output_device_id = None
 screen = None
-event_get = None
 surface = None
 running = True
 
@@ -72,7 +72,6 @@ def open_midi_ports():
 
 def init_display():
     global screen
-    global event_get
     global surface
 
     style.screensize = (1000,100)
@@ -88,18 +87,23 @@ def init_display():
         screen = pygame.display.set_mode(style.screensize, pygame.FULLSCREEN)
     else:
         style.resize_big()
-        screen = pygame.display.set_mode(style.screensize)
+        screen = pygame.display.set_mode(style.screensize, pygame.RESIZABLE)
 
-    dim = screen.get_rect()
+    on_resize()
     pygame.fastevent.init()
     pygame.key.set_repeat(150,10)
-    event_get = pygame.fastevent.get
 
 
+
+def on_resize():
+    global surface
+    dim = screen.get_size()
+    style.resize(dim[0], dim[1])
     surface = pygame.Surface(screen.get_size())
     surface.convert()
     surface.fill(style.main_bg)
     pygame.display.update()
+
 
 notes_down = []
 
@@ -114,7 +118,6 @@ def main_loop(b):
     global midi_in
     global midi_out
     global screen
-    global event_get
     global running
 
     note_off_cue = []
@@ -134,7 +137,11 @@ def main_loop(b):
                 r = b.key_down(e.key)
             elif e.type in [MOUSEBUTTONDOWN]:
                 r = b.mouse_down(e.pos)
-
+            elif e.type == pygame.VIDEORESIZE:
+                screen=pygame.display.set_mode(e.dict['size'],HWSURFACE|DOUBLEBUF|RESIZABLE)
+                on_resize()
+                if hasattr(b.cs, 'resize'):
+                    b.cs.resize()
             if r == "quit":
                 running = False
             elif r != None:
