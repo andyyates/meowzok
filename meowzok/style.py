@@ -42,7 +42,7 @@ class Stylei:
 
     def resize_big(self):
         #m = pygame.display.Info() (messes up when you have multiple screens)
-        self.resize(1212, 800) #the default width of the lilypond output
+        self.resize(1100, 550) #the default width of the lilypond output
 
 
     def resize(self, w,h):

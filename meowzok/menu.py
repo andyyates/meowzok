@@ -223,7 +223,6 @@ class SettingsMenu(Menu):
                 style.show_helper_keyboard = set_value == "Yes"
             elif set_key == "fullscreen":
                 style.fullscreen = set_value == "True"
-                self.messages = ["restart to make change happen"]
             elif set_key == "set_speed":                
                 style.speed = self.speeds.index(set_value)
             elif set_key == "midi_through":

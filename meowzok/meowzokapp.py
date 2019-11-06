@@ -71,9 +71,6 @@ def open_midi_ports():
 
 
 def init_display():
-    global screen
-    global surface
-
     style.screensize = (1000,100)
     pygame.display.init()
     pygame.font.init()
@@ -82,21 +79,25 @@ def init_display():
 
     open_midi_ports()
 
-    if style.fullscreen:
-        style.resize_full()
-        screen = pygame.display.set_mode(style.screensize, pygame.FULLSCREEN)
-    else:
-        style.resize_big()
-        screen = pygame.display.set_mode(style.screensize, pygame.RESIZABLE)
-
     on_resize()
     pygame.fastevent.init()
     pygame.key.set_repeat(150,10)
 
 
-
+current_is_fullscreen = None
 def on_resize():
     global surface
+    global screen
+    global current_is_fullscreen 
+
+    if current_is_fullscreen != style.fullscreen:
+        current_is_fullscreen = style.fullscreen
+        if style.fullscreen:
+            style.resize_full()
+            screen = pygame.display.set_mode(style.screensize, pygame.FULLSCREEN)
+        else:
+            style.resize_big()
+            screen = pygame.display.set_mode(style.screensize, pygame.RESIZABLE)
     dim = screen.get_size()
     style.resize(dim[0], dim[1])
     surface = pygame.Surface(screen.get_size())
@@ -153,6 +154,7 @@ def main_loop(b):
         if style.changed_in_menu == True:
             style.changed_in_menu = False
             open_midi_ports()
+            on_resize()
             style.changed_in_main = True
         
         if midi_in:
