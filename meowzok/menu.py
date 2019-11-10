@@ -157,6 +157,12 @@ class GameSelect(Menu):
             self.add_menu_item(title, [g[1], [self, MKMidiFile(path)]])
 
 
+class MidiNoteMenu(Menu):
+    def __init__(self, up, title, setting_key, current_value):
+        super().__init__(up)
+        self.title = "settings > " + title
+        for i in range(0,128):
+            self.add_menu_item(title=str(i), action=[self.menu_up.set, [setting_key, i]], nn=i)
 
 class OptionsMenu(Menu):
     def __init__(self, up, title, options, setting_key, current_value=None, message=None):
@@ -231,6 +237,11 @@ class SettingsMenu(Menu):
                 style.crash_piano = set_value == "True"
             elif set_key == "set_midi_dir":
                 style.midi_dir = set_value
+            elif set_key == "kbd_lowest_note":
+                style.kbd_lowest_note = set_value
+            elif set_key == "kbd_highest_note":
+                style.kbd_highest_note = set_value
+            
             else:
                 print("Unknown settings key ", set_key, "=", set_value)
             style.changed_in_menu = True
@@ -273,6 +284,9 @@ class SettingsMenu(Menu):
         else:
             s = "False"
         self.add_menu_item(title="crash piano: %s " % (s), action=[OptionsMenu, [self, 'crash_piano', ["True","False"], "crash_piano", s]])
+
+        self.add_menu_item(title="kbd - lowest note: %s " % style.kbd_lowest_note, action=[MidiNoteMenu, [self, 'kbd - lowest note', "kbd_lowest_note", style.kbd_lowest_note]])
+        self.add_menu_item(title="kbd - highest note: %s " % style.kbd_highest_note, action=[MidiNoteMenu, [self, 'kbd - highest note', "kbd_highest_note", style.kbd_highest_note]])
 
 
     def draw(self, surface):

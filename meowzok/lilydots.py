@@ -472,6 +472,7 @@ class LilyDots():
 
     def make_cache_file_name(self, i):
         gn = re.sub("[^a-zA-Z0-9]","_",self.midifile.name)
+        gn += "%d_%d" % (style.kbd_lowest_note, style.kbd_highest_note)
         fn = cache_path + gn + "/"
         if not os.path.exists(fn):
             os.makedirs(fn)

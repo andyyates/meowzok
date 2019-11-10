@@ -52,6 +52,14 @@ class Game:
         self.__active_notes = []
         self.done_notes = []
         self.midifile = midifile
+
+        for nl in self.midifile.notes:
+            for n in nl:
+                while n.nn < style.kbd_lowest_note:
+                    n.nn += 12
+                while n.nn > style.kbd_highest_note:
+                    n.nn -= 12
+            
         self.player = Player()
         self.__setup_level()
         self.__rebuild_dots()

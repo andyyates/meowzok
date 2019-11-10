@@ -22,6 +22,8 @@ class Stylei:
         self.midi_in_port = None
         self.midi_out_port = None
         self.midi_through = None
+        self.kbd_lowest_note = 0
+        self.kbd_highest_note = 127
         self.screensize = (640,480)
         self.show_helper_keyboard = False
         self.speed = 0
@@ -74,6 +76,8 @@ class Stylei:
                 writer.writerow(["crash_piano", "True"])
             else:
                 writer.writerow(["crash_piano", "False"])
+            writer.writerow(["kbd_lowest_note", self.kbd_lowest_note])
+            writer.writerow(["kbd_highest_note", self.kbd_highest_note])
 
     def load(self):
         if os.path.exists(self.config_file_path):
@@ -98,6 +102,10 @@ class Stylei:
                             self.speed = int(v)
                         elif k=="fullscreen":
                             self.fullscreen = v == "True"
+                        elif k=="kbd_highest_note":
+                            self.kbd_highest_note = int(v)
+                        elif k=="kbd_lowest_note":
+                            self.kbd_lowest_note = int(v)
                         else:
                             print("config value %s=%s means nothing to me" % (k,v))
                     except:
