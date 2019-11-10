@@ -53,6 +53,9 @@ class Stylei:
 
     def save(self):
         print("save config to ", self.config_file_path)
+        cfgdir = os.path.dirname(self.config_file_path)
+        if not os.path.exists(cfgdir):
+            os.makedirs(cfgdir)
         with open(self.config_file_path, 'w') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(["midi_in_port", self.midi_in_port]) 
