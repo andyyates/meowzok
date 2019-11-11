@@ -302,6 +302,11 @@ class QuitMenu(Menu):
         self.add_menu_item(title="no", action=main_menu)
         self.add_menu_item(title="yes", action="quit")
 
+#class HighScoreMenu(Menu):
+#    def __init__(self, up)
+#        super().__init__(up)
+#        self.title = "High scores"
+
 class MainMenu(Menu):
     def __init__(self):
         quitm = QuitMenu(self)

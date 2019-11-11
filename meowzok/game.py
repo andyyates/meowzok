@@ -2,6 +2,7 @@ import random
 import time
 import csv   
 import datetime
+import math
 from meowzok.style import style
 from meowzok.keyboard import Keyboard
 from meowzok.util import *
@@ -35,7 +36,60 @@ class Score:
         return int(((self.played_notes/self.avaliable_notes))*100)
 
     def grade(self):
-        return self.bpm * self.percent_correct() * self.percent_played() / 10000
+        return self.bpm * self.percent_correct() * math.pow(self.percent_played(),3) / math.pow(100, 4)
+
+
+def load_score(row):
+    score = Score()
+    try:
+        score.date = datetime.datetime.fromisoformat(row[1])
+    except:
+        print("Error converting date ", row[1])
+    try:
+        score.bpm = float(row[2])
+    except:
+        print("Error loading bpm ", row[2])
+    try:
+        score.errors = int(row[3])
+    except:
+        print("Error loading error count ", row[3])
+    try:
+        score.played_notes = int(row[4])
+    except:
+        print("Error loading played_notes count ", row[4])
+    try:
+        score.avaliable_notes = int(row[5])
+    except:
+        print("Error loading avaliable_notes count ", row[5])
+    return score
+
+#def load_high_scores_for_menu():
+#    scores = {}
+#    if os.path.exists(high_scores_filename()):
+#        with open(high_scores_filename(), 'r') as fd:
+#            csv_reader = csv.reader(fd, delimiter=',')
+#            name = row[0]
+
+     
+
+def load_high_scores_for_game(name):
+    print("loading high scores")
+    scores = []
+    if os.path.exists(high_scores_filename()):
+        print("path ok")
+        with open(high_scores_filename(), 'r') as fd:
+            print("with me file")
+            csv_reader = csv.reader(fd, delimiter=',')
+            for row in csv_reader:
+                if len(row) == 6:
+                    if row[0] == name:
+                        score = load_score(row)
+                        scores.append(score)
+    scores.sort()
+    scores.reverse()
+    print("Have ", len(scores), " scores")
+    return scores
+
 
 
 
@@ -69,7 +123,7 @@ class Game:
         self.page_i = 0
         self.notes_down = None
         self.keyboard = Keyboard()
-        self.high_scores = self.load_high_scores()
+        self.high_scores = load_high_scores_for_game(self.midifile.name)
         if len(self.high_scores)>0:
             self.high_score = max(self.high_scores)
         else:
@@ -89,50 +143,6 @@ class Game:
             row.append(self.player.score.played_notes)
             row.append(self.player.score.avaliable_notes)
             writer.writerow(row)
-
-
-    def load_high_scores(self):
-        print("loading high scores")
-        lvlname = self.midifile.name
-        self.high_score = Score()
-        scores = []
-        if os.path.exists(high_scores_filename()):
-            print("path ok")
-            with open(high_scores_filename(), 'r') as fd:
-                print("with me file")
-                csv_reader = csv.reader(fd, delimiter=',')
-                for row in csv_reader:
-                    if len(row) == 6:
-                        if row[0] == lvlname:
-                            print("loading a row")
-                            score = Score()
-                            try:
-                                score.date = datetime.datetime.fromisoformat(row[1])
-                            except:
-                                print("Error converting date ", row[1])
-                            try:
-                                score.bpm = float(row[2])
-                            except:
-                                print("Error loading bpm ", row[2])
-                            try:
-                                score.errors = int(row[3])
-                            except:
-                                print("Error loading error count ", row[3])
-                            try:
-                                score.played_notes = int(row[4])
-                            except:
-                                print("Error loading played_notes count ", row[4])
-                            try:
-                                score.avaliable_notes = int(row[5])
-                            except:
-                                print("Error loading avaliable_notes count ", row[5])
-
-                            scores.append(score)
-        scores.sort()
-        scores.reverse()
-        print("Have ", len(scores), " scores")
-        return scores
-
 
     
 
@@ -246,7 +256,7 @@ class Game:
             textpos.top = 0
             surface.blit(title, textpos)
 
-            msg = "HI bpm:%3.2f  bum notes:%d  played:%d%%" % (self.high_score.bpm, self.high_score.errors, self.high_score.percent_played())
+            msg = "HI bpm:%3.2f  accuracy:%d%%  played:%d%%" % (self.high_score.bpm, self.high_score.percent_correct(), self.high_score.percent_played())
             text = style.font.render(msg, 1, style.bpm)
             textpos = text.get_rect()
             textpos.right = dim.width
@@ -263,7 +273,7 @@ class Game:
             else:
                 y = dim.height
 
-            msg = "bpm:%3.2f  bum notes:%d  played:%d%%" % (self.player.score.bpm, self.player.score.errors, self.player.score.percent_played())
+            msg = "bpm:%3.2f  accuracty:%d%%  played:%d%%" % (self.player.score.bpm, self.player.score.percent_correct(), self.player.score.percent_played())
             text = style.font.render(msg, 1, style.bpm)
             textpos = text.get_rect()
             textpos.right = dim.width
@@ -297,7 +307,7 @@ class Game:
             surface.blit(title, textpos)
 
             self.yy += textpos.height
-            n = style.font.render("      date                  bpm             error   grade", 1, style.title_fg)
+            n = style.font.render("      date                  bpm          accuracy   played  grade", 1, style.title_fg)
             tpn = n.get_rect()
             tpn.centerx = dim.centerx
             tpn.top = self.yy
@@ -313,7 +323,7 @@ class Game:
                 else:
                     d = "you>"
                 bpm = "%3.2f" % (s.bpm)
-                n = style.font.render("%4d  %15s      %6s          %3d     %3d " % (rank, d, bpm, s.errors, s.grade()), 1, style.title_fg)
+                n = style.font.render("%4d  %15s      %6s          %3d%%     %3d%%      %3d " % (rank, d, bpm, s.percent_correct(), s.percent_played(), s.grade()), 1, style.title_fg)
                 tpn = n.get_rect()
                 tpn.centerx = dim.centerx
                 tpn.top = self.yy
