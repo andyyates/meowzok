@@ -122,6 +122,8 @@ class  Menu:
         elif key == pygame.K_LEFT or key == pygame.K_ESCAPE:
             if hasattr(self, "menu_up") and self.menu_up != None:
                 return self.menu_up
+            else:
+                return "quit"
         else:
             return key
 
@@ -135,13 +137,13 @@ main_dir = os.path.split(os.path.abspath(__file__))[0]
 games = []
 for f in os.listdir(main_dir):
     if f.startswith("game__") and f.endswith(".py"):
-        print ("Importing ", f.replace(".py",""))
+        #print ("Importing ", f.replace(".py",""))
         mod = importlib.import_module("."+f.replace(".py",""), "meowzok")
         for n in dir(mod):
             if n.startswith("Game_"):
-                print ("DIE", n)
+                #print ("DIE", n)
                 games.append([n, getattr(mod, n)])
-                print ("loaded " , n, " from ", f)
+                #print ("loaded " , n, " from ", f)
     
 
 class GameSelect(Menu):
@@ -151,10 +153,14 @@ class GameSelect(Menu):
         filename = os.path.basename(path)
         self.title = filename.replace(".mid", "")
         self.menu = []
-        self.add_menu_item("play song", [Game, [self, MKMidiFile(path), True]])
+        self.add_menu_item("play song", [self._run_game, [Game, path]])
         for g in games:
             title = " ".join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', g[0])).split()[1:])
-            self.add_menu_item(title, [g[1], [self, MKMidiFile(path)]])
+            self.add_menu_item(title, [self._run_game, [g[1], path]])
+
+    def _run_game(self, game, path):
+        mf = MKMidiFile(path)
+        return game(self, mf)
 
 
 class MidiNoteMenu(Menu):
@@ -298,6 +304,7 @@ class SettingsMenu(Menu):
 class QuitMenu(Menu):
     def __init__(self,main_menu):
         super().__init__(None)
+        self.menu_up = self
         self.title = "Exit ?"
         self.add_menu_item(title="no", action=main_menu)
         self.add_menu_item(title="yes", action="quit")

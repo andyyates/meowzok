@@ -54,22 +54,26 @@ def get_midi_output_port_names():
             op.append(o[1])
     return op
 
+def get_device_name(device_id):
+    return pygame.midi.get_device_info(device_id)[1].decode('utf-8')
+
+
 def _get_device_id_by_name(name, is_input):
-    print("------------------------_")
-    print("get by name '%s' " % (name))
+    #print("------------------------_")
+    #print("get by name '%s' " % (name))
     for i,o in enumerate(_get_ports()):
-        print("device", i, o)
+        #print("device", i, o)
         if o[1] == name:
-            print("Nmae match")
+            #print("Nmae match")
             if is_input:
-                print("is input?")
+                #print("is input?")
                 if o[2]:
-                    print("Is input")
+                    #print("Is input")
                     return i
             else:
-                print("is output?")
+                #print("is output?")
                 if o[3]:
-                    print("Is output")
+                    #print("Is output")
                     return i
 
 def get_input_device_id_by_name(name):

@@ -43,11 +43,30 @@ if not os.path.exists(cache_path):
 
 class Page():
     def __init__(self,i):
-        self.notes = []
+        self.notes = [[] for i in range(0,2)]
         self.i = i
         self.loaded = False
         pass
 
+_thread_handle = None
+_stop_event = threading.Event()
+def _tstop():
+    print("STOP called")
+    _stop_event.set()
+def _tstopped():
+    return _stop_event.is_set()
+
+def print_note(n):
+    if not print_debug_msgs:
+        return
+    print(n.type, n.time, n.length, " ".join([note_names[nn] for nn in n.nns]))
+
+class Lilnote:
+    def __init__(self, time, length, nns, t):
+        self.time = time
+        self.length = length
+        self.nns = nns
+        self.type = t
 
 class LilyDots():
     def __init__(self, midifile):#game_name, midi_file_path, bars_per_page, notes, time_sig):
@@ -73,10 +92,15 @@ class LilyDots():
             print("load from cache failed..")
         #    exit()
             #build images 
+            global _thread_handle
+            if _thread_handle:
+                _tstop()
+                _thread_handle.join()
+                _stop_event.clear()
 
             
-            thread = threading.Thread(target = self.__run_generate_images)
-            thread.start()
+            _thread_handle = threading.Thread(target = self.__run_generate_images)
+            _thread_handle.start()
             #self.generate_images()
             #scan images to find notes
 
@@ -90,35 +114,119 @@ class LilyDots():
             raise
             exit()
 
+
     def split_notes_into_pages(self):
-        page_len = self.midifile.time_sig.get_bar_len()*style.bars_per_page
-        left_time = 0
-        right_time = page_len
-        cpage = Page(0)
-        cpage.left_time = left_time
-        cpage.right_time = right_time
-        for nl in self.midifile.active_notes:
-            t = nl[0].time
-            if t >= right_time:
-                self.pages.append(cpage)
-                left_time += page_len
-                right_time += page_len
-                cpage = Page(len(self.pages))
-                cpage.left_time = left_time
-                cpage.right_time = right_time
-            cpage.notes.append(nl)
-        if len(cpage.notes)>0:
-            self.pages.append(cpage)
+        ts = self.midifile.time_sig
+        bar_len = ts.get_bar_len()
+        page_len = bar_len * style.bars_per_page
+        min_gap = bar_len / 4
+        
+        print ("-"*100)
+
+        #split notes into lists for each clef, group into lilnote
+        tnotes = [[],[]]
+        for anl in self.midifile.active_notes:
+            for i,tnl in enumerate(tnotes):
+                cnl = [n for n in anl if n.clef == i]
+                if len(cnl) > 0:
+                    n = Lilnote(ts.quantize_time(cnl[0].time), ts.quantize_length(cnl[0].length), [o.nn for o in cnl], "note")
+                    tnl.append(n)
+
+        #insert bar checks
+        for clef,notes in enumerate(tnotes):
+            t = 0
+            i = 0
+            while True:
+                t += bar_len
+                bar_check = Lilnote(t, 0, [], "bar")
+                while i<len(notes) and notes[i].time < t:
+                    i += 1
+                if i<len(notes):
+                    notes.insert(i,bar_check)
+                else:
+                    notes.append(bar_check)
+                    break
+
+        #close up gaps and insert rests
+        for clef,notes in enumerate(tnotes):
+            i = 0
+            while i < len(notes):
+                n = notes[i]
+                if(i>0):
+                    prev = notes[i-1]
+                else:
+                    prev = Lilnote(0, 0, [], "bar")
+                gap = n.time - (prev.time+prev.length)
+                if gap > 0:
+                    if prev.type != "bar" and gap < min_gap and ts.is_valid_length(n.time-prev.time):
+                        prev.length = n.time-prev.time #extend previous note to avoid tiddly rests everywhere
+                        print("close gap")
+                    else:
+                        rest = Lilnote(prev.time+prev.length, gap, [], "rest") #insert a rest where the gap is big enough
+                        print("INSert rest")
+                        notes.insert(i,rest)
+                        i+=1
+                elif gap < 0:
+                    pl = prev.length
+                    prev.length = n.time-prev.time #trim previous note if they overlap in clef, polyphonic scores will display wrong-ish
+                    print("Trim prev")
+                    if n.type == "bar": #if we trimmed the note because of a bar line, stick the rest of the note in here, and tie it
+                        #print("insert tied")
+                        prev.type = "note-tie-l"
+                        nu = Lilnote(n.time, pl-prev.length, prev.nns, "note-tie-r") 
+                i += 1
+
+        #split into pages
+        end_time = max([n[-1].time+n[-1].length for n in tnotes])
+        page_count = math.ceil(end_time / page_len)
+        for i in range(0,page_count):
+            p = Page(i)
+            p.left_time = page_len*i
+            p.right_time = p.left_time + page_len
+            self.pages.append(p)
+        for clef, notes in enumerate(tnotes):
+            for n in notes:
+                pgno = int(n.time/page_len)
+                if pgno < len(self.pages):
+                    self.pages[pgno].notes[clef].append(n)
+                else:
+                    if n.type != "bar":
+                        print("OVERFLOW")
+                        print_note(n)
+                        print("OVERFLOW")
+
         for p in self.pages:
-            for i,nl in enumerate(p.notes):
-                for n in nl:
-                    n.page_no = p.i
-                    n.number_in_page = i
+            p.nc = 0
+
+        for nl in self.midifile.active_notes:
+            for n in nl:
+                qt = ts.quantize_time(n.time)
+                n.page_no = int( qt / page_len) 
+                if n.page_no < len(self.pages):
+                    p = self.pages[n.page_no]
+                    n.number_in_page = p.nc
+                else:
+                    print("Overflow note in page")
+            p.nc += 1
+
+        if False:
+            for clef, notes in enumerate(tnotes):
+                print("Clef ", clef)
+                for n in notes:
+                    if n.length > 0:
+                        print(n.type, n.nns, ts.get_length_name(n.length), n.time, n.length)
+                    else:
+                        print(n.type, n.nns, "0", n.time, n.length)
+
+        print ("-"*100)
+
+
+        #exit()
 
         
 
     def load_from_cache(self):
-        print("loading from cache", self.midifile.path, self.make_cache_file_name(0))
+        #print("loading from cache", self.midifile.path, self.make_cache_file_name(0))
         out_of_date = False
         if not os.path.exists(self.midifile.path):
             print("", self.midifile.path, " not exist")
@@ -143,7 +251,7 @@ class LilyDots():
             p.csv_path = self.make_cache_file_name(p.i)+".csv"
             for c in [p.png_path, p.csv_path]:
                 if not os.path.exists(c):
-                    print("path ", c, " not exist")
+                    #print("path ", c, " not exist")
                     return False
                 mtime = os.path.getmtime(c)
                 if mtime < midi_file_mtime:
@@ -210,7 +318,7 @@ class LilyDots():
         img_dim = img.get_rect()
         scaled = self.pages[page_i].img
 
-        print("Dim ", dim)
+        #print("Dim ", dim)
 
         #if img_dim.width > dim.width:
         #    self.scale = dim.width / img_dim.width 
@@ -284,9 +392,12 @@ class LilyDots():
         if not xpos:
             return
         x = xpos.left*self.scale + offset.left + self.left_pad
-        y = xpos.top*self.scale + offset.top + self.top_pad
+        y = xpos.top*self.scale + offset.top + self.top_pad - 40
         #print(active_note_i, n.number_in_page)
-        pygame.draw.rect(surface, color, (x,y,xpos.width,xpos.height))
+        #pygame.draw.rect(surface, color, (x,y,xpos.width,xpos.height))
+        w = xpos.width
+
+        pygame.draw.polygon(surface, color, ((x,y),(x+w,y),(x+w/2,y+w),(x,y)))
 
 
 
@@ -296,6 +407,7 @@ class LilyDots():
         lily_template = r"""
         \version "2.19.82"
 #(set! paper-alist (cons '("my size" . (cons (* 12 in) (* 3 in))) paper-alist))
+        \include "lilypond-book-preamble.ly"
 
         \paper{
           #(set-paper-size "my size")
@@ -337,98 +449,33 @@ class LilyDots():
         
 
 
-        def print_times(*argv):  
-            if not print_debug_msgs:
-                return
-            op= []
-            op.append(argv[0])
-            for arg in argv[1:]:
-                op.append(arg)
-                op.append(arg/480)
-            print(op)
 
+
+        ts = self.midifile.time_sig
         for p in self.pages:
-            print("Page ", p.i)
-
-            #insert bars as notes with zero length - bit hacky
-            tmp_notes = p.notes.copy()
-            print_times("Page %d" %(p.i), len(tmp_notes), p.left_time, p.right_time)
-
-
-            for i in range(p.left_time, p.right_time+1, self.midifile.time_sig.get_bar_len()):
-                if i == 0:
-                    continue
-                nl = []
-                for j in range(0,2):
-                    rest = Note()
-                    rest.nn = -1
-                    rest.time = i
-                    rest.length_ticks = 0
-                    rest.clef = j
-                    nl.append(rest)
-                tmp_notes.append(nl)
-            #sort notes make sure bars breaks appear before notes
-            tmp_notes.sort(key=lambda x:(x[0].time, x[0].length_ticks))
-
             note_body = ["",""]
+            if _tstopped():
+                print("lilypond thread stoping")
+                return
+            print("gen ", self.midifile.name, " page ", p.i)
 
-            for clef in range(0,2):
-                lily_time = p.left_time
-                #print("clef ",clef)
-                for nl in tmp_notes:
-                    if nl[0].time < p.left_time:
-                        print(nl, nl[0].time, p.left_time)
-                        raise "Wtf?"
-                        continue
-                    tnl = [l for l in nl if l.clef == clef]
-                    if len(tnl) == 0:
-                        print_times("Skip empty notes")
-                        continue
-                    quantizer = int(self.midifile.time_sig.ticks_per_beat / 4)  
-                    qtime = round(tnl[0].time/quantizer,0)*quantizer
-                    if qtime >= p.right_time:
-                        d = p.right_time - lily_time
-                        if d>0:
-                            nd = self.midifile.time_sig.quantize_length(d)
-                            if nd != d:
-                                print("note: quantized rest is %d vs unquantized at %d", nd, d)
-                            d = nd
-                            rest_name = self.midifile.time_sig.get_length_name(d)
-                            print_times ("eopr>", qtime, lily_time)
-                            note_body[clef] += "r" + rest_name + " "
-                        break
-                    diff = qtime - lily_time
-                    if diff > 0:
-                        print_times ("rest>", qtime, lily_time)
-
-                        ndiff = self.midifile.time_sig.quantize_length(diff)
-                        if ndiff != diff:
-                            print("Wierd stuff in diff time ..")
-                        rest_name = self.midifile.time_sig.get_length_name(ndiff)
-                        note_body[clef] += "r" + rest_name + " "
-                        lily_time += ndiff
-                    if tnl[0].length_ticks == 0:
-                        print_times ("bar >", qtime, lily_time)
-                        #bar break
+            for clef, notes in enumerate(p.notes):
+                for n in notes:
+                    print_note(n)
+                    if n.type == "bar":
                         note_body[clef] += " | "
-                        #print("BAR")
-                    elif len(tnl) > 1:
-                        for l in tnl:
-                            print_times ("note>", qtime, lily_time, l.length_ticks)
-                        l = min(tnl, key=lambda x:x.length_ticks)
-                        note_body[clef] += "<" + " ".join([note_names[n.nn] for n in tnl]) + ">" + l.length_name + " "
-                        lily_time += l.length_ticks
-                        qtime += l.length_ticks
-                    elif len(tnl) == 1:
-                        l = tnl[0]
-                        print_times ("note>", qtime, lily_time, l.length_ticks)
+                    elif n.type == "rest":
+                        note_body[clef] += "r"+ts.get_length_name(n.length)
+                    elif n.type.startswith("note"):
+                        if len(n.nns) > 1:
+                            t = "<" + " ".join([note_names[nn] for nn in n.nns]) + ">" + ts.get_length_name(n.length) 
+                        else:
+                            t = note_names[n.nns[0]] + ts.get_length_name(n.length)
+                        if n.type.endswith("tie-l"):
+                            t += "~"
+                        note_body[clef] += t + " "
 
-                        note_body[clef] += note_names[tnl[0].nn] + l.length_name + " "
-                        lily_time += l.length_ticks
-                        qtime += l.length_ticks
 
-                    #if lily_time != qtime:
-                    #    print("LILY TIME OUT oF WhacK>", lily_time, qtime, "<")
 
             
             
@@ -459,8 +506,10 @@ class LilyDots():
             FNULL = open(os.devnull, 'w')
             popencmd = ['lilypond', '--png']
             popencmd.append(p.ly_name)
-            print ("_", end='')
-            process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
+            if print_debug_msgs:
+                process = subprocess.Popen(popencmd, cwd=dirname)
+            else:
+                process = subprocess.Popen(popencmd, cwd=dirname, stdout=FNULL, stderr=subprocess.PIPE)
             output, err = process.communicate()
             rc = process.returncode
 

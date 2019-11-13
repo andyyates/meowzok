@@ -2,6 +2,9 @@
 
 #based on meld bin
 
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 import shutil
 import os
 from multiprocessing import freeze_support

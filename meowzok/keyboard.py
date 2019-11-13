@@ -40,13 +40,13 @@ class Keyboard:
 
     def __draw_key(self, surface, k):
         if k.nn in self.right_keys:
-            pygame.draw.rect(surface, (0,200,200), k.rect)
+            pygame.draw.rect(surface, (0,200,0), k.rect)
         else:
             if k.black == 1:
                 pygame.draw.rect(surface, (0,0,0), k.rect)
         pygame.draw.rect(surface, (100,100,100), k.rect, 1)
         if k.nn in self.wrong_keys:
-            pygame.draw.rect(surface, (200,0,0), (k.rect.left, k.rect.bottom-self.key_w, k.rect.width, self.key_w))
+            pygame.draw.rect(surface, (100,000,200), k.rect)
 
     def draw(self, surface, offset):
         if offset != self.offset:

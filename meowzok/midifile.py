@@ -47,6 +47,12 @@ class TimeSig:
         t = round(time / q , 0) * q
         return t
 
+    def is_valid_length(self, length_ticks):
+        if length_ticks == 0:
+            return False
+        fraction_len = length_ticks/(self.ticks_per_beat*4)
+        return fraction_len in self.note_length_names.keys()
+
     def quantize_length(self, length_ticks):
         if length_ticks == 0:
             print("Length IS ZERO!")
@@ -79,6 +85,9 @@ class Note:
         self.sprite = None
         self.length_ticks = length_ticks
         self.length_name = length_name
+
+    def note_name(self):
+        return 'c,c#,d,d#,e,f,f#,g,g#,a,a#,b'.split(",")[self.nn%12]
 
     def __eq__(self, other): 
         if not isinstance(other, Note):
@@ -178,9 +187,10 @@ class MKMidiFile():
                             print(msg)
                             print("Note len zero at ", time, n.time, " note dropped")
                         else:
-                            n.length_ticks = self.time_sig.quantize_length(l)
-                            n.time = self.time_sig.quantize_time(n.time)
-                            n.length_name = self.time_sig.get_length_name(n.length_ticks)
+                            n.length = l
+                            #n.length_ticks = self.time_sig.quantize_length(l)
+                            #n.time = self.time_sig.quantize_time(n.time)
+                            #n.length_name = self.time_sig.get_length_name(n.length_ticks)
 
         tmp_notes.sort(key = lambda x: x.time)
 

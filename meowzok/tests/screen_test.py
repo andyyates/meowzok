@@ -15,18 +15,29 @@ if __name__=="__main__":
     import meowzok.game as game
     import meowzok.style as style
     import meowzok.midifile as midifile
+    import meowzok.lilydots as lilydots
 else:
     from .meowzok import meowzokapp as app
     from .meowzok import menu as menu
 
+
 import unittest
-grunning = False
+grunning = True
 #for f in os.listdir(style.style.midi_dir):
 #    gtestmidifile = style.style.midi_dir+"/"+f
 #    print ("using ", gtestmidifile, " as test midi file")
 #    break
 
+#lilydots.debug_always_load_cache = False
+lilydots.debug_never_load_cache = True
+lilydots.print_debug_msgs = True
+
+
+gtestmidifile = style.style.midi_dir+"/RondoAllaTurca.mid"
+#gtestmidifile = style.style.midi_dir+"/i-want-to-sing-in-opera.mid"
 gtestmidifile = style.style.midi_dir+"/Tetris.mid"
+
+
 
 class TestScreen(unittest.TestCase):
 
@@ -37,8 +48,8 @@ class TestScreen(unittest.TestCase):
     def setUp(self):
         self.b = menu.B()
         main = menu.MainMenu()
-        self.midi_file = midifile.MKMidiFile(gtestmidifile)
-        self.game = game.Game(main, self.midi_file)
+        self.midifile = midifile.MKMidiFile(gtestmidifile)
+        self.game = game.Game(main, self.midifile)
     
     @classmethod
     def tearDownClass(self):
@@ -83,18 +94,41 @@ class TestScreen(unittest.TestCase):
         app.running = grunning
         app.main_loop(self.b)
 
+    def game(self):
+        self.game.active_i = 30
+        self.game.page_i = 1
+        self.b.cs = self.game
+        self.b.cs.menu_up = "quit"
+        app.running = grunning
+        app.main_loop(self.b)
 
 def suite():
     suite = unittest.TestSuite()
     #suite.addTest(TestScreen("gameSelect"))
     #suite.addTest(TestScreen("mainMenu"))
     #suite.addTest(TestScreen("midiMenu"))
-    suite.addTest(TestScreen("levelComplete"))
+    #suite.addTest(TestScreen("levelComplete"))
     #suite.addTest(TestScreen("levelFail"))
     #suite.addTest(TestScreen("settingsMenu"))
+    suite.addTest(TestScreen("game"))
     return suite
 
 if __name__ == "__main__":
+
+#import argparse
+#
+#    parser = argparse.ArgumentParser(description='Test meowzok')
+#
+#    parser.add_argument('test', metavar='N', type=int, nargs='+',
+#                        help='an integer for the accumulator')
+#    parser.add_argument('--sum', dest='accumulate', action='store_const',
+#                        const=sum, default=max,
+#                        help='sum the integers (default: find the max)')
+#
+#    args = parser.parse_args()
+#    print args.accumulate(args.integers)
+
+
     s = suite()
     runner = unittest.TextTestRunner()
     runner.run(s)

@@ -144,7 +144,6 @@ class Game:
             row.append(self.player.score.avaliable_notes)
             writer.writerow(row)
 
-    
 
     def __setup_level(self):
         self.__active_notes = self.midifile.active_notes
@@ -371,7 +370,7 @@ class Game:
                 self.win = 1
                 self.alive = False
             elif self.next_active_note()[0].time < self.__time:
-                print("die", self.__time)
+                #print("die", self.__time)
                 self.win = 0
                 self.alive = False
         else:

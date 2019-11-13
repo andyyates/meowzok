@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 from meowzok.menu import *
 from meowzok.util import *
 from meowzok.game import *
@@ -45,28 +46,28 @@ def open_midi_ports():
         debug("Midi out open, close midi out")
         midi_out.close()
         midi_out = None
-    debug("getting input from settings")
+    #debug("getting input from settings")
     input_device_id = midiio.get_input_device_id_by_name(style.midi_in_port)
     if input_device_id == None:
         debug("no input device from settings, using first device")
         input_device_id = midiio.get_first_input_device_id()
     if input_device_id == None:
-        debug("failed to get input device")
+        print("no midi in")
         midi_in = None
     else:
-        debug("Open input device")
+        print("open midi in ", midiio.get_device_name(input_device_id))
         midi_in = midiio.open_input(input_device_id)
 
-    debug("get output from settings")
+    #debug("get output from settings")
     output_device_id = midiio.get_output_device_id_by_name(style.midi_out_port)
     if output_device_id == None:
         debug("no output device from settings, use first device")
         output_device_id = midiio.get_first_output_device_id()
     if output_device_id == None:
-        debug("no output device")
+        print("no midi out")
         midi_out = None
     else:
-        debug("open output device")
+        print("open midi out ", midiio.get_device_name(output_device_id))
         midi_out = midiio.open_output(output_device_id)
 
 

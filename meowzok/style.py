@@ -32,6 +32,7 @@ class Stylei:
         self.time_inc = 15
         self.time_line = (0,200,200)
         self.title_fg = (0,0,0)
+        self.title_win = (0,200,0)
         self.load()
 
 
@@ -48,7 +49,7 @@ class Stylei:
 
 
     def resize(self, w,h):
-        print("RESIZE STYLEee", w,h)
+        #print("RESIZE STYLEee", w,h)
         self.screensize = (w,h)
         fs = int(h/30)
         self.font = pygame.font.SysFont("dejavusansmono", fs)
@@ -85,7 +86,7 @@ class Stylei:
             with open(self.config_file_path, 'r') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
-                    print("load row", row)
+                    #print("load row", row)
                     k,v = row
                     try:
                         if k=="midi_in_port":
