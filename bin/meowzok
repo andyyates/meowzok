@@ -86,22 +86,27 @@ def show_error_and_exit(error_text):
         raise Exception(error_text)
     sys.exit(1)
 
+def is_exe(path):
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
 
 def findlilly():
-    if os.path.exists(meowzok.style.style.lilypond_path):
+    if is_exe(meowzok.style.style.lilypond_path):
         return
-    print("Looking for lilypond binary")
-    search = ["C:\\program files\\", "/usr/bin", "C:\\", "/bin"]
+    print("Looking for lilypond.exe")
+    search = ["C:\\program files\\", "C:\\"]
     for s in search:
         print("looking in ", s)
         if os.path.exists(s):
             print("looing deeper")
             for path,dirs,files in os.walk(s):
-                if "lilypond" in files:
-                    print("Found lilypond at ", path)
-                    meowzok.style.style.lilypond_path = path + "/lilypond"
-                    meowzok.style.style.save()
-                    return
+                if "lilypond.exe" in files:
+                    p = path + "\lilypond.exe"
+                    if is_exe(p):
+                        print("Found lilypond at ", p)
+                        meowzok.style.style.lilypond_path = p
+                        meowzok.style.style.save()
+                        return
 
 def check_requirements():
 
