@@ -47,6 +47,20 @@ class TimeSig:
         t = round(time / q , 0) * q
         return t
 
+    def get_biggest_valid_length(self, length_ticks):
+        print("Len ticks", length_ticks)
+        if length_ticks == 0:
+            raise("Error - biggest valid length of zero is zero")
+        fraction_len = length_ticks/(self.ticks_per_beat*4)
+        for l in reversed(sorted(self.note_length_names.keys())):
+            print( fraction_len, l)
+            if l <= fraction_len:
+                return l*self.ticks_per_beat*4
+        raise("Error - couldn't find a big enough value")
+
+    def smallest_length(self):
+        return sorted(self.note_length_names.keys())[0] * self.ticks_per_beat*4
+
     def is_valid_length(self, length_ticks):
         if length_ticks == 0:
             return False
@@ -56,7 +70,7 @@ class TimeSig:
     def quantize_length(self, length_ticks):
         if length_ticks == 0:
             print("Length IS ZERO!")
-            raise Exception('spam', 'eggs')
+            raise Exception('length is zero!')
         fraction_len = length_ticks/(self.ticks_per_beat*4)
         length = min(self.note_length_names.keys(),  key=lambda x:abs(x-fraction_len))
         return length*self.ticks_per_beat*4
@@ -187,7 +201,8 @@ class MKMidiFile():
                             print(msg)
                             print("Note len zero at ", time, n.time, " note dropped")
                         else:
-                            n.length = l
+                            n.length = self.time_sig.quantize_length(l)
+                            n.time = self.time_sig.quantize_time(n.time)
                             #n.length_ticks = self.time_sig.quantize_length(l)
                             #n.time = self.time_sig.quantize_time(n.time)
                             #n.length_name = self.time_sig.get_length_name(n.length_ticks)

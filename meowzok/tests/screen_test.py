@@ -33,9 +33,10 @@ lilydots.debug_never_load_cache = True
 lilydots.print_debug_msgs = True
 
 
-gtestmidifile = style.style.midi_dir+"/RondoAllaTurca.mid"
+#gtestmidifile = style.style.midi_dir+"/RondoAllaTurca.mid"
 #gtestmidifile = style.style.midi_dir+"/i-want-to-sing-in-opera.mid"
-gtestmidifile = style.style.midi_dir+"/Tetris.mid"
+#gtestmidifile = style.style.midi_dir+"/Tetris.mid"
+gtestmidifile = style.style.midi_dir+"/boccherini_minuet.mid"
 
 
 
@@ -48,8 +49,6 @@ class TestScreen(unittest.TestCase):
     def setUp(self):
         self.b = menu.B()
         main = menu.MainMenu()
-        self.midifile = midifile.MKMidiFile(gtestmidifile)
-        self.game = game.Game(main, self.midifile)
     
     @classmethod
     def tearDownClass(self):
@@ -61,6 +60,8 @@ class TestScreen(unittest.TestCase):
         app.main_loop(self.b)
 
     def levelFail(self):
+        self.midifile = midifile.MKMidiFile(gtestmidifile)
+        self.game = game.Game(main, self.midifile)
         self.b.cs = self.game
         self.game.alive = False
         self.game.win = False
@@ -68,6 +69,8 @@ class TestScreen(unittest.TestCase):
         app.main_loop(self.b)
 
     def levelComplete(self):
+        self.midifile = midifile.MKMidiFile(gtestmidifile)
+        self.game = game.Game(main, self.midifile)
         self.b.cs = self.game
         self.game.alive = False
         self.game.win = True
@@ -95,10 +98,17 @@ class TestScreen(unittest.TestCase):
         app.main_loop(self.b)
 
     def game(self):
+        self.midifile = midifile.MKMidiFile(gtestmidifile)
+        self.game = game.Game(None, self.midifile)
         self.game.active_i = 30
         self.game.page_i = 1
         self.b.cs = self.game
         self.b.cs.menu_up = "quit"
+        app.running = grunning
+        app.main_loop(self.b)
+
+    def highscoremenu(self):
+        self.b.cs = menu.HighScoreMenu(None)
         app.running = grunning
         app.main_loop(self.b)
 
@@ -111,6 +121,7 @@ def suite():
     #suite.addTest(TestScreen("levelFail"))
     #suite.addTest(TestScreen("settingsMenu"))
     suite.addTest(TestScreen("game"))
+    #suite.addTest(TestScreen("highscoremenu"))
     return suite
 
 if __name__ == "__main__":

@@ -132,6 +132,15 @@ class LilyDots():
                     n = Lilnote(ts.quantize_time(cnl[0].time), ts.quantize_length(cnl[0].length), [o.nn for o in cnl], "note")
                     tnl.append(n)
 
+        mln = 99999
+        for n in tnl:
+            mln = min(mln, n.length)
+            if n.length == 0:
+                print ("FOUNDiTHEiCULPRIT")
+
+                exit()
+        print("MIn length = ", mln)
+
         #insert bar checks
         for clef,notes in enumerate(tnotes):
             t = 0
@@ -160,21 +169,50 @@ class LilyDots():
                 if gap > 0:
                     if prev.type != "bar" and gap < min_gap and ts.is_valid_length(n.time-prev.time):
                         prev.length = n.time-prev.time #extend previous note to avoid tiddly rests everywhere
+                        if prev.length == 0:
+                            print("EEEEEEEEEEEEEEEEEEEEk")
+                            exit()
                         print("close gap")
                     else:
-                        rest = Lilnote(prev.time+prev.length, gap, [], "rest") #insert a rest where the gap is big enough
-                        print("INSert rest")
-                        notes.insert(i,rest)
-                        i+=1
+                        t = prev.time+prev.length
+                        print("Filling a gap of ", gap)
+                        while(gap > 0):
+                            max_rest = ts.get_biggest_valid_length(gap)
+                            print("Best is ", max_rest)
+                            if max_rest == 0:
+                                print(">>>>>best is rubbish")
+                                break
+                            rest = Lilnote(t, max_rest, [], "rest") #insert a rest where the gap is big enough
+                            t += max_rest
+                            gap -= max_rest
+                            print("INSert rest")
+                            notes.insert(i,rest)
+                            i+=1
                 elif gap < 0:
                     pl = prev.length
-                    prev.length = n.time-prev.time #trim previous note if they overlap in clef, polyphonic scores will display wrong-ish
-                    print("Trim prev")
-                    if n.type == "bar": #if we trimmed the note because of a bar line, stick the rest of the note in here, and tie it
-                        #print("insert tied")
-                        prev.type = "note-tie-l"
-                        nu = Lilnote(n.time, pl-prev.length, prev.nns, "note-tie-r") 
+                    #trim previous note if they overlap in clef, polyphonic scores will display wrong, but at least playable
+                    if n.time-prev.time > 0:
+                        nl = ts.get_biggest_valid_length(n.time-prev.time)
+                        prev.length = nl
+                        remaining = pl-prev.length
+                        if n.type == "bar" and remaining>=ts.smallest_length(): #if we trimmed the note because of a bar line, stick the rest of the note in here, and tie it
+                            prev.type = "note-tie-l"
+                            nl = ts.get_biggest_valid_length(remaining)
+                            if nl== 0:
+                                print("C EEEEEEEEEEEEEEEEEEEEk")
+                                exit()
+                            nu = Lilnote(n.time, nl, prev.nns, "note-tie-r") 
+                        #backup to allow rests to be inserted
+                        i-=1
                 i += 1
+
+
+        for cler,notes in enumerate(tnotes):
+            for n in notes:
+                if n.type != "bar" and n.length == 0:
+                    print_note(n)
+                    print ("FOUNDiTHEiCULPRIT")
+                    exit()
 
         #split into pages
         end_time = max([n[-1].time+n[-1].length for n in tnotes])
@@ -467,6 +505,7 @@ class LilyDots():
                     elif n.type == "rest":
                         note_body[clef] += "r"+ts.get_length_name(n.length)
                     elif n.type.startswith("note"):
+                        print(n.type)
                         if len(n.nns) > 1:
                             t = "<" + " ".join([note_names[nn] for nn in n.nns]) + ">" + ts.get_length_name(n.length) 
                         else:
@@ -597,7 +636,12 @@ class LilyDots():
                 writer.writerow(row)
 
         #check each pages has the right number of note-group type events on it and send out a warning on the command line if so
-        if len(p.notes) != len(p.note_xs):
+        tots = []
+        for nl in p.notes:
+            for n in nl:
+                if n.time not in tots:
+                    tots.append(n.time)
+        if len(tots) != len(p.note_xs[0]):
             print("Error on page %d - there should be %d NOT %d" % (p.i, len(p.notes), len(p.note_xs)))
 
         p.loaded = True

@@ -1,20 +1,9 @@
 ----TODO
 
-add percentage complete to score board
-
-add end of level page in game
-- play again
-- show score
-- show hi score
-- show graph of previous scores
-
-add a 'no lives' option - so you can hammer a loop without getting dead
-
-allow loop over parts you can't play
+fix Smiths - 
+fix Boc
 
 add a 'start with a couple of notes' game
-
-after playing a random notes / no-cache game, loading a normal game crashes as filename ends with .mid_no_cache = maybe set a flag...
 
 options
     - audio connections
@@ -83,3 +72,19 @@ no internal beepy synth - unless there is a nice library that doesn't hang and h
 jump back to begining of bar if you mess up
 
 add a random order game
+
+add percentage complete to score board
+
+add end of level page in game
+- play again
+- show score
+- show hi score
+- show graph of previous scores
+
+add a 'no lives' option - so you can hammer a loop without getting dead
+
+allow loop over parts you can't play
+
+after playing a random notes / no-cache game, loading a normal game crashes as filename ends with .mid_no_cache = maybe set a flag...
+
+

@@ -309,10 +309,66 @@ class QuitMenu(Menu):
         self.add_menu_item(title="no", action=main_menu)
         self.add_menu_item(title="yes", action="quit")
 
-#class HighScoreMenu(Menu):
-#    def __init__(self, up)
-#        super().__init__(up)
-#        self.title = "High scores"
+class HighScoreMenu(Menu):
+    def __init__(self, up):
+        super().__init__(up)
+        self.title = "High scores"
+
+    def on_open(self):
+        self.menu = []
+        scores = load_high_scores()
+        scores.sort()
+        scores.reverse()
+        scores_by_game = {}
+        for s in scores:
+            k = s.midifile+s.game
+            if k not in scores_by_game.keys():
+                scores_by_game[k] = s
+        scores = [v for k,v in scores_by_game.items()]
+        scores.sort(key=lambda s: s.date)
+        today = datetime.datetime.now()
+        self.messages = ["  %50s   %10s    %3s " % ("filename","last beat","grade")]
+        for s in scores:
+            if s.game == "Game_LeftHandOnly" or s.game == "Game_RightHandOnly":
+                continue
+            diff = today - s.date
+            if diff.days == 0:
+                d = "today"
+            else:
+                if diff.days == 1:
+                    d = "1day"
+                else:
+                    d = "%d days" % (diff.days)
+            bpm = "%3.2f" % (s.bpm)
+            gn = s.game.replace("Game_","")
+            if gn == "RandomNotes":
+                gn = "Random"
+            if gn == "Game":
+                gn = ""
+            fn = s.midifile.replace(".mid","").replace("-"," ")
+            n = "%40s %10s  %10s    %3d " % (fn , gn, d, s.grade())
+
+            self.add_menu_item(title=n, action=[self._run_game, [s.game, s.midifile]])
+
+    def find(self, name, path):
+        for root, dirs, files in os.walk(path):
+            if name in files:
+                return os.path.join(root, name)
+
+
+    def _run_game(self, game_name, fn):
+        game = Game
+        for g in games:
+            if g[0] == game_name:
+                game = g[1]
+        path = self.find(fn, style.midi_dir)
+        mf = MKMidiFile(path)
+        return game(self, mf)
+
+
+
+
+
 
 class MainMenu(Menu):
     def __init__(self):
@@ -327,6 +383,7 @@ class MainMenu(Menu):
     def rebuild_menu(self):
         self.menu = []
         self.current_path = style.midi_dir
+        self.add_menu_item(title="hi scores",action=[HighScoreMenu, [self]])
 
         self.add_menu_item(title=">..", action=[self.change_dir, [".."]])
         if os.path.exists(self.dir):

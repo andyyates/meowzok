@@ -16,6 +16,8 @@ class Score:
         self.errors = 0
         self.played_notes = 0
         self.avaliable_notes = 0
+        self.midifile = ""
+        self.invalid = False
 
     def printit(self):
         print("score ", self.bpm, self.errors, self.played_notes, self.grade())
@@ -28,19 +30,26 @@ class Score:
             return 0
         if self.played_notes == 0:
             return 100
+        if self.invalid:
+            return 0
         return int(((self.played_notes - self.errors) / self.played_notes)*100)
 
     def percent_played(self):
         if self.avaliable_notes == 0:
             return 0
+        if self.invalid:
+            return 0
         return int(((self.played_notes/self.avaliable_notes))*100)
 
     def grade(self):
+        if self.invalid:
+            return 0
         return self.bpm * self.percent_correct() * math.pow(self.percent_played(),3) / math.pow(100, 4)
 
 
 def load_score(row):
     score = Score()
+    score.midifile = row[0]
     try:
         score.date = datetime.datetime.fromisoformat(row[1])
     except:
@@ -61,6 +70,10 @@ def load_score(row):
         score.avaliable_notes = int(row[5])
     except:
         print("Error loading avaliable_notes count ", row[5])
+    try:
+        score.game = row[6]
+    except:
+        print("no game info")
     return score
 
 #def load_high_scores_for_menu():
@@ -72,19 +85,19 @@ def load_score(row):
 
      
 
-def load_high_scores_for_game(name):
+def load_high_scores_for_game(path, gamename):
     print("loading high scores")
     scores = []
+    fn = os.path.basename(path)
     if os.path.exists(high_scores_filename()):
         print("path ok")
         with open(high_scores_filename(), 'r') as fd:
             print("with me file")
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
-                if len(row) == 6:
-                    if row[0] == name:
-                        score = load_score(row)
-                        scores.append(score)
+                if row[0] == fn and row[6] == gamename:
+                    score = load_score(row)
+                    scores.append(score)
     scores.sort()
     scores.reverse()
     print("Have ", len(scores), " scores")
@@ -92,6 +105,17 @@ def load_high_scores_for_game(name):
 
 
 
+def load_high_scores():
+    scores = []
+    if os.path.exists(high_scores_filename()):
+        with open(high_scores_filename(), 'r') as fd:
+            csv_reader = csv.reader(fd, delimiter=',')
+            for row in csv_reader:
+                score = load_score(row)
+                scores.append(score)
+    scores.sort()
+    scores.reverse()
+    return scores
 
 
 class Player:
@@ -123,7 +147,7 @@ class Game:
         self.page_i = 0
         self.notes_down = None
         self.keyboard = Keyboard()
-        self.high_scores = load_high_scores_for_game(self.midifile.name)
+        self.high_scores = load_high_scores_for_game(self.midifile.path, type(self).__name__)
         if len(self.high_scores)>0:
             self.high_score = max(self.high_scores)
         else:
@@ -136,12 +160,13 @@ class Game:
         with open(high_scores_filename(),'a') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             row = []
-            row.append(self.midifile.name)
+            row.append(os.path.basename(self.midifile.path))
             row.append(datetime.datetime.now().isoformat())
             row.append(self.player.score.bpm)
             row.append(self.player.score.errors)
             row.append(self.player.score.played_notes)
             row.append(self.player.score.avaliable_notes)
+            row.append(type(self).__name__)
             writer.writerow(row)
 
 
@@ -390,12 +415,14 @@ class Game:
 
     def key_down(self, key):
         if key == pygame.K_LEFT:
+            self.invalid = True
             if self.alive == False or self.active_i == 0:
                 return self.menu_up
             else:
                 self.active_i -= 1
                 self.back_up_to_bar()
         elif key == pygame.K_RIGHT:
+            self.invalid = True
             self.fwd_a_bar()
         elif key == pygame.K_ESCAPE:
             return self.menu_up
