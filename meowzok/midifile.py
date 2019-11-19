@@ -122,7 +122,7 @@ class MKMidiFile():
             print("No config file at ", fn)
             return
 
-        with open(fn) as csv_file:
+        with open(fn, newline='') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for lin,row in enumerate(csv_reader):
                 if lin == 0:
@@ -151,7 +151,7 @@ class MKMidiFile():
 
     def __save_config_file(self, filename):
         fn = self.__make_config_file_name(filename)
-        with open(fn,'w') as fd:
+        with open(fn,'w',newline='') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(self.config_csv_header)
 

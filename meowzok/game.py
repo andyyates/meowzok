@@ -91,7 +91,7 @@ def load_high_scores_for_game(path, gamename):
     fn = os.path.basename(path)
     if os.path.exists(high_scores_filename()):
         print("path ok")
-        with open(high_scores_filename(), 'r') as fd:
+        with open(high_scores_filename(), 'r', newline='') as fd:
             print("with me file")
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
@@ -108,7 +108,7 @@ def load_high_scores_for_game(path, gamename):
 def load_high_scores():
     scores = []
     if os.path.exists(high_scores_filename()):
-        with open(high_scores_filename(), 'r') as fd:
+        with open(high_scores_filename(), 'r', newline='') as fd:
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
                 score = load_score(row)
@@ -157,7 +157,7 @@ class Game:
     def write_high_score_file(self):
         if self.player.score.grade() == 0:
             return
-        with open(high_scores_filename(),'a') as fd:
+        with open(high_scores_filename(),'a', newline='') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             row = []
             row.append(os.path.basename(self.midifile.path))

@@ -47,7 +47,7 @@ class  Menu:
         surface.blit(text, textpos)
 
         if selected:
-            msg = "\u2192"
+            msg = ">"
             text = style.font.render(msg, 2, color)
             cp = text.get_rect()
             cp.left = x
@@ -69,7 +69,7 @@ class  Menu:
         self.menu_items_rects = []
 
         if hasattr(self,"menu_up"):
-            msg = "\u2190"
+            msg = "<"
             text = style.font.render(msg, 2, (0,0,0))
             cp = text.get_rect()
             cp.left = 0
@@ -385,11 +385,13 @@ class MainMenu(Menu):
         self.current_path = style.midi_dir
         self.add_menu_item(title="hi scores",action=[HighScoreMenu, [self]])
 
-        self.add_menu_item(title=">..", action=[self.change_dir, [".."]])
+        self.add_menu_item(title="",action="")
+
+        self.add_menu_item(title=" ..", action=[self.change_dir, [".."]])
         if os.path.exists(self.dir):
             for f in sorted(os.listdir(self.dir)):
                 if os.path.isdir(self.dir+"/"+f):
-                    self.add_menu_item(title=">"+f, action=[self.change_dir, [f]])
+                    self.add_menu_item(title="+"+f, action=[self.change_dir, [f]])
             for f in sorted(os.listdir(self.dir)):
                 if not os.path.isdir(self.dir+"/"+f):
                     if f.endswith(".mid"):

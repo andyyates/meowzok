@@ -59,7 +59,7 @@ class Stylei:
         cfgdir = os.path.dirname(self.config_file_path)
         if not os.path.exists(cfgdir):
             os.makedirs(cfgdir)
-        with open(self.config_file_path, 'w') as fd:
+        with open(self.config_file_path, 'w', newline='') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(["midi_in_port", self.midi_in_port]) 
             writer.writerow(["midi_out_port", self.midi_out_port]) 
@@ -83,7 +83,7 @@ class Stylei:
     def load(self):
         if os.path.exists(self.config_file_path):
             print("load config from ", self.config_file_path)
-            with open(self.config_file_path, 'r') as fd:
+            with open(self.config_file_path, 'r', newline='') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
                     #print("load row", row)

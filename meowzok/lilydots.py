@@ -307,7 +307,7 @@ class LilyDots():
 
             p.img = pygame.image.load(p.png_path)
 
-            with open(p.csv_path) as csv_file:
+            with open(p.csv_path, newline='') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 for lin,row in enumerate(csv_reader):
                     if lin == 0:
@@ -628,7 +628,7 @@ class LilyDots():
         p.note_xs.sort(key=lambda x:x.x)
         pygame.image.save(p.img, p.png_path)
 
-        with open(self.make_cache_file_name(page_i)+".csv",'w') as fd:
+        with open(self.make_cache_file_name(page_i)+".csv",'w',newline='') as fd:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(self.info_csv_header)
             for n in p.note_xs:
