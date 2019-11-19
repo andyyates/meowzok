@@ -543,7 +543,7 @@ class LilyDots():
 
             dirname = os.path.dirname(self.make_cache_file_name(self.pages[0].i))
             FNULL = open(os.devnull, 'w')
-            popencmd = ['lilypond', '--png']
+            popencmd = [style.lilypond_path, '--png']
             popencmd.append(p.ly_name)
             if print_debug_msgs:
                 process = subprocess.Popen(popencmd, cwd=dirname)

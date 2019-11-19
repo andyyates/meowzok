@@ -24,6 +24,7 @@ class Stylei:
         self.midi_through = None
         self.kbd_lowest_note = 0
         self.kbd_highest_note = 127
+        self.lilypond_path = ""
         self.screensize = (640,480)
         self.show_helper_keyboard = False
         self.speed = 0
@@ -79,6 +80,7 @@ class Stylei:
                 writer.writerow(["crash_piano", "False"])
             writer.writerow(["kbd_lowest_note", self.kbd_lowest_note])
             writer.writerow(["kbd_highest_note", self.kbd_highest_note])
+            writer.writerow(["lilypond_path", self.lilypond_path])
 
     def load(self):
         if os.path.exists(self.config_file_path):
@@ -107,6 +109,8 @@ class Stylei:
                             self.kbd_highest_note = int(v)
                         elif k=="kbd_lowest_note":
                             self.kbd_lowest_note = int(v)
+                        elif k=="lilypond_path":
+                            self.lilypond_path = v
                         else:
                             print("config value %s=%s means nothing to me" % (k,v))
                     except:

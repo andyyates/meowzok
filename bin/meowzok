@@ -32,6 +32,7 @@ else:
 devel = os.path.exists(os.path.join(meowzokdir, ".git"))
 
 import meowzok.conf  
+import meowzok.style
 
 # Silence warnings on non-devel releases (minor version is divisible by 2)
 is_stable = not bool(int(meowzok.conf.__version__.split('.')[1]) % 2)
@@ -86,6 +87,22 @@ def show_error_and_exit(error_text):
     sys.exit(1)
 
 
+def findlilly():
+    if os.path.exists(meowzok.style.style.lilypond_path):
+        return
+    print("Looking for lilypond binary")
+    search = ["C:\\program files\\", "/usr/bin", "C:\\", "/bin"]
+    for s in search:
+        print("looking in ", s)
+        if os.path.exists(s):
+            print("looing deeper")
+            for path,dirs,files in os.walk(s):
+                if "lilypond" in files:
+                    print("Found lilypond at ", path)
+                    meowzok.style.style.lilypond_path = path + "/lilypond"
+                    meowzok.style.style.save()
+                    return
+
 def check_requirements():
 
     pygame_req = "0.0.0"
@@ -108,9 +125,7 @@ def check_requirements():
     except (ImportError, AssertionError, ValueError) as e:
         missing_reqs("pygame", pygame_req, e)
 
-
-    if shutil.which('lilypond') == None:
-        missing_reqs("lilypond", lilypond_req, None)
+    findlilly()
 
 #
 #def setup_settings():
