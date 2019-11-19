@@ -48,12 +48,12 @@ class TimeSig:
         return t
 
     def get_biggest_valid_length(self, length_ticks):
-        print("Len ticks", length_ticks)
+        #print("Len ticks", length_ticks)
         if length_ticks == 0:
             raise("Error - biggest valid length of zero is zero")
         fraction_len = length_ticks/(self.ticks_per_beat*4)
         for l in reversed(sorted(self.note_length_names.keys())):
-            print( fraction_len, l)
+            #print( fraction_len, l)
             if l <= fraction_len:
                 return l*self.ticks_per_beat*4
         raise("Error - couldn't find a big enough value")
@@ -119,7 +119,7 @@ class MKMidiFile():
     def __load_config_file(self, filename):
         fn = self.__make_config_file_name(filename)
         if not os.path.exists(fn):
-            print("No config file at ", fn)
+            #print("No config file at ", fn)
             return
 
         with open(fn, newline='') as csv_file:

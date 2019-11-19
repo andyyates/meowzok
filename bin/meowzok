@@ -92,7 +92,14 @@ def is_exe(path):
 
 def findlilly():
     if is_exe(meowzok.style.style.lilypond_path):
-        return
+        return True
+    print("Looking for lilypond")
+    p = shutil.which("lilypond")
+    if p:
+        print("Found lilypond at ", p)
+        meowzok.style.style.lilypond_path = p
+        meowzok.style.style.save()
+        return True
     print("Looking for lilypond.exe")
     search = ["C:\\program files\\", "C:\\"]
     for s in search:
@@ -106,7 +113,8 @@ def findlilly():
                         print("Found lilypond at ", p)
                         meowzok.style.style.lilypond_path = p
                         meowzok.style.style.save()
-                        return
+                        return True
+    return False
 
 def check_requirements():
 
@@ -130,7 +138,9 @@ def check_requirements():
     except (ImportError, AssertionError, ValueError) as e:
         missing_reqs("pygame", pygame_req, e)
 
-    findlilly()
+    if not findlilly():
+        missing_reqs("lilypond", lilypond_req)
+        exit()
 
 #
 #def setup_settings():

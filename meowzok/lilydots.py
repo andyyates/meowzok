@@ -121,7 +121,9 @@ class LilyDots():
         page_len = bar_len * style.bars_per_page
         min_gap = bar_len / 4
         
-        print ("-"*100)
+        if print_debug_msgs:
+            print ("-"*100)
+            print("arrange notes for score...")
 
         #split notes into lists for each clef, group into lilnote
         tnotes = [[],[]]
@@ -139,7 +141,7 @@ class LilyDots():
                 print ("FOUNDiTHEiCULPRIT")
 
                 exit()
-        print("MIn length = ", mln)
+        #print("MIn length = ", mln)
 
         #insert bar checks
         for clef,notes in enumerate(tnotes):
@@ -172,20 +174,25 @@ class LilyDots():
                         if prev.length == 0:
                             print("EEEEEEEEEEEEEEEEEEEEk")
                             exit()
-                        print("close gap")
+                        if print_debug_msgs:
+                            print("close gap")
                     else:
                         t = prev.time+prev.length
-                        print("Filling a gap of ", gap)
+                        if print_debug_msgs:
+                            print("Filling a gap of ", gap)
                         while(gap > 0):
                             max_rest = ts.get_biggest_valid_length(gap)
-                            print("Best is ", max_rest)
+                            if print_debug_msgs:
+                                print("Best is ", max_rest)
                             if max_rest == 0:
-                                print(">>>>>best is rubbish")
+                                if print_debug_msgs:
+                                    print(">>>>>best is rubbish")
                                 break
                             rest = Lilnote(t, max_rest, [], "rest") #insert a rest where the gap is big enough
                             t += max_rest
                             gap -= max_rest
-                            print("INSert rest")
+                            if print_debug_msgs:
+                                print("INSert rest")
                             notes.insert(i,rest)
                             i+=1
                 elif gap < 0:
@@ -247,7 +254,7 @@ class LilyDots():
                     print("Overflow note in page")
             p.nc += 1
 
-        if False:
+        if print_debug_msgs:
             for clef, notes in enumerate(tnotes):
                 print("Clef ", clef)
                 for n in notes:
@@ -256,7 +263,8 @@ class LilyDots():
                     else:
                         print(n.type, n.nns, "0", n.time, n.length)
 
-        print ("-"*100)
+        if print_debug_msgs:
+            print ("-"*100)
 
 
         #exit()
@@ -505,7 +513,6 @@ class LilyDots():
                     elif n.type == "rest":
                         note_body[clef] += "r"+ts.get_length_name(n.length)
                     elif n.type.startswith("note"):
-                        print(n.type)
                         if len(n.nns) > 1:
                             t = "<" + " ".join([note_names[nn] for nn in n.nns]) + ">" + ts.get_length_name(n.length) 
                         else:
@@ -635,14 +642,16 @@ class LilyDots():
                 row = [p.i, n.left, n.top, n.width, n.height]
                 writer.writerow(row)
 
-        #check each pages has the right number of note-group type events on it and send out a warning on the command line if so
+        #check each pages has the right number of note-group type events on it and send out a warning on the command line if not
         tots = []
-        for nl in p.notes:
-            for n in nl:
-                if n.time not in tots:
-                    tots.append(n.time)
-        if len(tots) != len(p.note_xs[0]):
-            print("Error on page %d - there should be %d NOT %d" % (p.i, len(p.notes), len(p.note_xs)))
+        for clefnotes in p.notes:
+            for n in clefnotes:
+                if n.type.startswith("note"):
+                    if n.time not in tots:
+                        tots.append(n.time)
+
+        if len(tots) != len(p.note_xs):
+            print("Error on page %d - there should be %d NOT %d" % (p.i, len(tots), len(p.note_xs)))
 
         p.loaded = True
 

@@ -90,9 +90,7 @@ def load_high_scores_for_game(path, gamename):
     scores = []
     fn = os.path.basename(path)
     if os.path.exists(high_scores_filename()):
-        print("path ok")
         with open(high_scores_filename(), 'r', newline='') as fd:
-            print("with me file")
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
                 if row[0] == fn and row[6] == gamename:
@@ -100,7 +98,6 @@ def load_high_scores_for_game(path, gamename):
                     scores.append(score)
     scores.sort()
     scores.reverse()
-    print("Have ", len(scores), " scores")
     return scores
 
 
