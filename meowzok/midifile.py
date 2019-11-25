@@ -125,29 +125,29 @@ class MKMidiFile():
         with open(fn, newline='') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             for lin,row in enumerate(csv_reader):
-                if lin == 0:
-                    if len(row) != len(self.config_csv_header):
-                        print("csv header does not match len=%d should be len=%d" % (len(row), len(self.config_csv_header)))
-                        return False
-                    for i,v in enumerate(self.config_csv_header):
-                        if row[i] != v:
-                            print("csv header does not match %d %s!=%s" % (i, row[i], v))
-                            return False
+                if len(row) != len(self.config_csv_header):
+                    print("csv header does not match len=%d should be len=%d" % (len(row), len(self.config_csv_header)))
                 else:
-                    k = row[0]
-                    v = row[1]
-                    if k == "key_sig_sharps":
-                        try:
-                            self.time_sig.key_sig_sharps = int(v)
-                        except:
-                            print("Could not convert %s to int" % v)
-                    elif k == "key_sig_is_major":
-                        try:
-                            selt.time_sig.key_sig_is_major = bool(v)
-                        except:
-                            print("Could not convert %s to bool" %v)
+                    if lin == 0:
+                        for i,v in enumerate(self.config_csv_header):
+                            if row[i] != v:
+                                print("csv header does not match %d %s!=%s" % (i, row[i], v))
+                                return False
                     else:
-                        print("Unknown row in " + fn)
+                        k = row[0]
+                        v = row[1]
+                        if k == "key_sig_sharps":
+                            try:
+                                self.time_sig.key_sig_sharps = int(v)
+                            except:
+                                print("Could not convert %s to int" % v)
+                        elif k == "key_sig_is_major":
+                            try:
+                                selt.time_sig.key_sig_is_major = bool(v)
+                            except:
+                                print("Could not convert %s to bool" %v)
+                        else:
+                            print("Unknown row in " + fn)
 
     def __save_config_file(self, filename):
         fn = self.__make_config_file_name(filename)

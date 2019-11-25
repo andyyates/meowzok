@@ -49,6 +49,9 @@ class Score:
 
 def load_score(row):
     score = Score()
+    if len(row) == 0:
+        print("Error load_score - row is empty")
+        return score
     score.midifile = row[0]
     try:
         score.date = datetime.datetime.fromisoformat(row[1])
@@ -93,9 +96,12 @@ def load_high_scores_for_game(path, gamename):
         with open(high_scores_filename(), 'r', newline='') as fd:
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
-                if row[0] == fn and row[6] == gamename:
-                    score = load_score(row)
-                    scores.append(score)
+                if len(row) > 6:
+                    if row[0] == fn and row[6] == gamename:
+                        score = load_score(row)
+                        scores.append(score)
+                else:
+                    print("loading scores for game, csv row too short")
     scores.sort()
     scores.reverse()
     return scores
@@ -288,11 +294,13 @@ class Game:
             pad = int(dim.w / 10)
             
             h = textpos.height*2
-            if style.show_helper_keyboard:# and ( style.speed == 0 or isbad ):
+            if style.show_helper_keyboard == "Never":
+                y = dim.height
+            else:
+                if style.show_helper_keyboard == "PlayedKeys":
+                    self.keyboard.right_keys = []
                 y = dim.height-h
                 self.keyboard.draw(surface, pygame.Rect(0, y, dim.width,h))
-            else:
-                y = dim.height
 
             msg = "bpm:%3.2f  accuracty:%d%%  played:%d%%" % (self.player.score.bpm, self.player.score.percent_correct(), self.player.score.percent_played())
             text = style.font.render(msg, 1, style.bpm)
@@ -360,7 +368,8 @@ class Game:
                         score_printed = True
                 if rank < 11:
                     print_score(s, rank)
-                rank += 1
+                if score_printed == True or self.player.score.grade() < s.grade():
+                    rank += 1
 
             if score_printed == False:
                 self.yy += textpos.height

@@ -26,6 +26,7 @@ class Stylei:
         self.kbd_highest_note = 127
         self.lilypond_path = ""
         self.screensize = (640,480)
+        self.show_helper_keyboard_options = ["Always","Never","PlayedKeys"]
         self.show_helper_keyboard = False
         self.speed = 0
         self.stave_bg = (255,255,255)
@@ -65,10 +66,7 @@ class Stylei:
             writer.writerow(["midi_in_port", self.midi_in_port]) 
             writer.writerow(["midi_out_port", self.midi_out_port]) 
             writer.writerow(["midi_dir", self.midi_dir]) 
-            if self.show_helper_keyboard:
-                writer.writerow(["show_helper_keyboard", "True"])
-            else:
-                writer.writerow(["show_helper_keyboard", "False"])
+            writer.writerow(["show_helper_keyboard", self.show_helper_keyboard])
             writer.writerow(["speed", self.speed]) 
             if self.fullscreen:
                 writer.writerow(["fullscreen", "True"])
@@ -88,33 +86,35 @@ class Stylei:
             with open(self.config_file_path, 'r', newline='') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
                 for row in csv_reader:
-                    #print("load row", row)
-                    k,v = row
-                    try:
-                        if k=="midi_in_port":
-                            self.midi_in_port = v
-                        elif k=="midi_out_port":
-                            self.midi_out_port = v
-                        elif k=="midi_dir":
-                            self.midi_dir = v
-                        elif k=="show_helper_keyboard":
-                            self.show_helper_keyboard = v == "True"
-                        elif k=="crash_piano":
-                            self.crash_piano = v == "True"
-                        elif k=="speed":
-                            self.speed = int(v)
-                        elif k=="fullscreen":
-                            self.fullscreen = v == "True"
-                        elif k=="kbd_highest_note":
-                            self.kbd_highest_note = int(v)
-                        elif k=="kbd_lowest_note":
-                            self.kbd_lowest_note = int(v)
-                        elif k=="lilypond_path":
-                            self.lilypond_path = v
-                        else:
-                            print("config value %s=%s means nothing to me" % (k,v))
-                    except:
-                        print("Fail loading config value ", k, v)
+                    if len(row) != 2:
+                        print("load config error - row empty")
+                    else:
+                        k,v = row
+                        try:
+                            if k=="midi_in_port":
+                                self.midi_in_port = v
+                            elif k=="midi_out_port":
+                                self.midi_out_port = v
+                            elif k=="midi_dir":
+                                self.midi_dir = v
+                            elif k=="show_helper_keyboard":
+                                self.show_helper_keyboard = v 
+                            elif k=="crash_piano":
+                                self.crash_piano = v == "True"
+                            elif k=="speed":
+                                self.speed = int(v)
+                            elif k=="fullscreen":
+                                self.fullscreen = v == "True"
+                            elif k=="kbd_highest_note":
+                                self.kbd_highest_note = int(v)
+                            elif k=="kbd_lowest_note":
+                                self.kbd_lowest_note = int(v)
+                            elif k=="lilypond_path":
+                                self.lilypond_path = v
+                            else:
+                                print("config value %s=%s means nothing to me" % (k,v))
+                        except:
+                            print("Fail loading config value ", k, v)
 
 
 

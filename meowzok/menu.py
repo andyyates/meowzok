@@ -232,7 +232,10 @@ class SettingsMenu(Menu):
             elif set_key == "midi_out":
                 style.midi_out_port = set_value
             elif set_key == "show_kbd":
-                style.show_helper_keyboard = set_value == "Yes"
+                if set_value in style.show_helper_keyboard_options:
+                    style.show_helper_keyboard = set_value 
+                else:
+                    style.show_helper_keyboard = style.show_helper_keyboard_options[0]
             elif set_key == "fullscreen":
                 style.fullscreen = set_value == "True"
             elif set_key == "set_speed":                
@@ -261,11 +264,7 @@ class SettingsMenu(Menu):
         self.menu = []
         self.add_menu_item(title="Midi In  : %s " % (style.midi_in_port), action=[OptionsMenu, [self, "Midi In",midiio.get_midi_input_port_names(), "midi_in", style.midi_in_port]])
         self.add_menu_item(title="Midi Out : %s " % (style.midi_out_port), action=[OptionsMenu, [self, "Midi Out",midiio.get_midi_output_port_names(), "midi_out", style.midi_out_port]])
-        if style.show_helper_keyboard:
-            s = "Yes"
-        else:
-            s = "No"
-        self.add_menu_item(title="Show Kbd : %s " % (s), action=[OptionsMenu, [self, "Show Kbd",["Yes","No"], "show_kbd", s]])
+        self.add_menu_item(title="Show Kbd : %s " % (style.show_helper_keyboard), action=[OptionsMenu, [self, "Show Kbd",style.show_helper_keyboard_options, "show_kbd", style.show_helper_keyboard]])
 
         spdname = self.speeds[style.speed]
         self.add_menu_item(title="Game speed:%s" % ( spdname ) , action=[OptionsMenu, [self, "Game speed", self.speeds, "set_speed", spdname]])

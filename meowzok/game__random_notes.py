@@ -13,10 +13,16 @@ class Game_RandomNotes(Game):
         t = 0
         while(len(nnotes)<16*4):
             nl = random.choice(mf.notes)
+            if len(nnotes)>0:
+                ok = True
+                for n in nl:
+                    if n.nn in [pn.nn for pn in nnotes[-1]]:
+                        ok = False
+                        break
+                if ok == False:
+                    continue
             grp = []
-            random.shuffle(nl)
-
-            for i in range(0,random.randint(0,len(nl))):
+            for i in range(0,len(nl)):
                 n = copy.deepcopy(nl[i])
                 n.length_ticks = mf.time_sig.ticks_per_beat
                 n.length_name = mf.time_sig.get_length_name(n.length_ticks)

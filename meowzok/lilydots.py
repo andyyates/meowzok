@@ -318,27 +318,27 @@ class LilyDots():
             with open(p.csv_path, newline='') as csv_file:
                 csv_reader = csv.reader(csv_file, delimiter=',')
                 for lin,row in enumerate(csv_reader):
-                    if lin == 0:
-                        if len(row) != len(self.info_csv_header):
-                            print("csv header does not match len=%d should be len=%d" % (len(row), len(self.info_csv_header)))
-                            return False
-                        for i,v in enumerate(self.info_csv_header):
-                            if row[i] != v:
-                                print("csv header does not match %d %s!=%s" % (i, row[i], v))
-                                return False
+                    if len(row) != len(self.info_csv_header):
+                        print("csv header does not match len=%d should be len=%d" % (len(row), len(self.info_csv_header)))
                     else:
-                        ints = []
-                        for v in row:
-                            try:
-                                ints.append(int(v))
-                            except:
-                                print("Could not convert %s to an int (at load from cache row %d)" % (v, lin))
-                        if ints[0] != p.i:
-                            print("loaded csv from different page ? wtf")
-                            return False
-                        if not hasattr(p, 'note_xs'):
-                            p.note_xs = []
-                        p.note_xs.append(pygame.Rect(*ints[1:]))
+                        if lin == 0:
+                            for i,v in enumerate(self.info_csv_header):
+                                if row[i] != v:
+                                    print("csv header does not match %d %s!=%s" % (i, row[i], v))
+                                    return False
+                        else:
+                            ints = []
+                            for v in row:
+                                try:
+                                    ints.append(int(v))
+                                except:
+                                    print("Could not convert %s to an int (at load from cache row %d)" % (v, lin))
+                            if ints[0] != p.i:
+                                print("loaded csv from different page ? wtf")
+                                return False
+                            if not hasattr(p, 'note_xs'):
+                                p.note_xs = []
+                            p.note_xs.append(pygame.Rect(*ints[1:]))
 
             p.loaded = True
         print("Loaded from cache")
