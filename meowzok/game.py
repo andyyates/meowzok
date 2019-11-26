@@ -302,7 +302,7 @@ class Game:
                 y = dim.height-h
                 self.keyboard.draw(surface, pygame.Rect(0, y, dim.width,h))
 
-            msg = "bpm:%3.2f  accuracty:%d%%  played:%d%%" % (self.player.score.bpm, self.player.score.percent_correct(), self.player.score.percent_played())
+            msg = "bpm:%3.2f  accuracy:%d%%  played:%d%%" % (self.player.score.bpm, self.player.score.percent_correct(), self.player.score.percent_played())
             text = style.font.render(msg, 1, style.bpm)
             textpos = text.get_rect()
             textpos.right = dim.width
@@ -350,7 +350,10 @@ class Game:
                 if hasattr(s, 'date'):
                     d = s.date.strftime("%d-%h-%y %H:%M")
                 else:
-                    d = "you>"
+                    if s.invalid:
+                        d = "invalid>"
+                    else:
+                        d = "you>"
                 bpm = "%3.2f" % (s.bpm)
                 n = style.font.render("%4d  %15s      %6s          %3d%%     %3d%%      %3d " % (rank, d, bpm, s.percent_correct(), s.percent_played(), s.grade()), 1, style.title_fg)
                 tpn = n.get_rect()
@@ -421,14 +424,14 @@ class Game:
 
     def key_down(self, key):
         if key == pygame.K_LEFT:
-            self.invalid = True
+            self.player.score.invalid = True
             if self.alive == False or self.active_i == 0:
                 return self.menu_up
             else:
                 self.active_i -= 1
                 self.back_up_to_bar()
         elif key == pygame.K_RIGHT:
-            self.invalid = True
+            self.player.score.invalid = True
             self.fwd_a_bar()
         elif key == pygame.K_ESCAPE:
             return self.menu_up
@@ -512,7 +515,8 @@ class Game:
                     self.win = 0
                     self.alive = 0
 
-                self.back_up_to_bar()
+                if style.on_error == "BackToBar":
+                    self.back_up_to_bar()
                 return 0
         return 1
 

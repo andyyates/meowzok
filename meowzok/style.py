@@ -27,7 +27,9 @@ class Stylei:
         self.lilypond_path = ""
         self.screensize = (640,480)
         self.show_helper_keyboard_options = ["Always","Never","PlayedKeys"]
-        self.show_helper_keyboard = False
+        self.show_helper_keyboard = self.show_helper_keyboard_options[0]
+        self.on_error_options = ["BackToBar","Stop"]
+        self.on_error = self.on_error_options[0]
         self.speed = 0
         self.stave_bg = (255,255,255)
         self.stave_fg = (0,0,0)
@@ -67,6 +69,7 @@ class Stylei:
             writer.writerow(["midi_out_port", self.midi_out_port]) 
             writer.writerow(["midi_dir", self.midi_dir]) 
             writer.writerow(["show_helper_keyboard", self.show_helper_keyboard])
+            writer.writerow(["on_error", self.on_error])
             writer.writerow(["speed", self.speed]) 
             if self.fullscreen:
                 writer.writerow(["fullscreen", "True"])
@@ -99,6 +102,8 @@ class Stylei:
                                 self.midi_dir = v
                             elif k=="show_helper_keyboard":
                                 self.show_helper_keyboard = v 
+                            elif k=="on_error":
+                                self.on_error = v
                             elif k=="crash_piano":
                                 self.crash_piano = v == "True"
                             elif k=="speed":
