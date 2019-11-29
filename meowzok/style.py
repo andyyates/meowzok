@@ -16,7 +16,9 @@ class Stylei:
         self.crash_piano = False
         self.lives = 10
         self.main_bg = (255,255,255)
-        self.menu_item_bg = (240,240,240)
+        self.scroll_bar_bg = (200,200,200)
+        self.scroll_bar_fg = (100,100,100)
+        self.menu_item_bg = (255,255,255)
         self.menu_item_fg = (0,0,240)
         self.midi_dir = os.path.join(main_dir+"/../midi/exercises/hanon")
         self.midi_in_port = None
@@ -67,6 +69,7 @@ class Stylei:
             writer = csv.writer(fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(["midi_in_port", self.midi_in_port]) 
             writer.writerow(["midi_out_port", self.midi_out_port]) 
+            writer.writerow(["midi_through", self.midi_through]) 
             writer.writerow(["midi_dir", self.midi_dir]) 
             writer.writerow(["show_helper_keyboard", self.show_helper_keyboard])
             writer.writerow(["on_error", self.on_error])
@@ -84,7 +87,10 @@ class Stylei:
             writer.writerow(["lilypond_path", self.lilypond_path])
 
     def load(self):
-        if os.path.exists(self.config_file_path):
+        if not os.path.exists(self.config_file_path):
+            self.no_config_file = True
+        else:
+            self.no_config_file = False
             print("load config from ", self.config_file_path)
             with open(self.config_file_path, 'r', newline='') as fd:
                 csv_reader = csv.reader(fd, delimiter=',')
@@ -98,6 +104,8 @@ class Stylei:
                                 self.midi_in_port = v
                             elif k=="midi_out_port":
                                 self.midi_out_port = v
+                            elif k=="midi_through":
+                                self.midi_through = v == "True"
                             elif k=="midi_dir":
                                 self.midi_dir = v
                             elif k=="show_helper_keyboard":

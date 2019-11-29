@@ -139,6 +139,10 @@ def main_loop(b):
                 r = b.key_down(e.key)
             elif e.type in [MOUSEBUTTONDOWN]:
                 r = b.mouse_down(e.pos)
+            elif e.type in [MOUSEBUTTONUP]:
+                r = b.mouse_up(e.pos)
+            elif e.type in [MOUSEMOTION]:
+                r = b.mouse_move(e.pos)
             elif e.type == pygame.VIDEORESIZE:
                 screen=pygame.display.set_mode(e.dict['size'],HWSURFACE|DOUBLEBUF|RESIZABLE)
                 on_resize()
@@ -215,6 +219,9 @@ def run(argv):
         b = B()
         if midi_in == None:
             b.cs = MidiMenu(b.cs)
+        if style.no_config_file:
+            b.cs = Wizzard(b.cs)
+            b.act(b.cs.next_item())
         main_loop(b)
         cleanup()
     elif argc > 1:

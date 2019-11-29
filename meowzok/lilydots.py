@@ -505,6 +505,7 @@ class LilyDots():
                 return
             print("gen ", self.midifile.name, " page ", p.i)
 
+            has_notes = [False,False]
             for clef, notes in enumerate(p.notes):
                 for n in notes:
                     print_note(n)
@@ -513,6 +514,7 @@ class LilyDots():
                     elif n.type == "rest":
                         note_body[clef] += "r"+ts.get_length_name(n.length)
                     elif n.type.startswith("note"):
+                        has_notes[clef] = True
                         if len(n.nns) > 1:
                             t = "<" + " ".join([note_names[nn] for nn in n.nns]) + ">" + ts.get_length_name(n.length) 
                         else:
@@ -533,9 +535,9 @@ class LilyDots():
 
             body = ""
             current_bar = p.i * style.bars_per_page+1
-            if note_body[0]!="":
+            if has_notes[0]:
                 body += staff_template % ("treble", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, current_bar, note_body[0])
-            if note_body[1]!="":
+            if has_notes[1]:
                 body +=staff_template % ("bass", keysig, self.midifile.time_sig.numerator,self.midifile.time_sig.denominator, current_bar, note_body[1])
             body = lily_template % (body) 
 
