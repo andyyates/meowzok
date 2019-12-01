@@ -128,6 +128,7 @@ class Player:
 
 class Game:
     def __init__(self, up, midifile, cacheable=True):
+        self.eek = False
         midifile.cacheable = cacheable
         self.menu_up = up
         self.__active_notes = []
@@ -249,7 +250,10 @@ class Game:
 
 
     def draw(self, surface):
-        surface.fill(style.main_bg)
+        if self.eek:
+            surface.fill(style.main_bg_eek)
+        else:
+            surface.fill(style.main_bg)
         dim = surface.get_rect()
 
         if self.alive:
@@ -472,6 +476,7 @@ class Game:
             if all (n in notes_scripted for n in notes_down):
                 rv = self.next_active_note()
                 if all (n in notes_down for n in notes_scripted):
+                    self.eek = False
                     self.notes_down = (self.active_i, rv)
                     self.pop_active()
                     for n in rv:
@@ -495,6 +500,7 @@ class Game:
                 else:
                     return 1
             elif ignore_error == False:
+                self.eek = True
                 self.__prev_error_note = nn
                 nl = self.next_active_note()
 

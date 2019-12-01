@@ -23,6 +23,7 @@ class  Menu:
         self.menu_items_rects = []
         self.clear_screen = True
         self.menu_selection = 0
+        self.prev_selection = 0
         self.menu = []
         self.title = "NO TITLE"
         self.scroll_top = 0
@@ -55,7 +56,7 @@ class  Menu:
 
         if selected:
             msg = ">"
-            text = style.font.render(msg, 2, color)
+            text = style.font.render(msg, 2, style.menu_item_arrow)
             cp = text.get_rect()
             cp.left = x
             cp.top = y
@@ -113,10 +114,21 @@ class  Menu:
 
         if self.game == None:
             for o in self.menu:
+                selected = o.i == self.menu_selection
                 if visible(y):
-                    tp = self.__draw_text(surface, o.title, font_height, scry(y), style.menu_item_fg, o.i == self.menu_selection)
+                    tp = self.__draw_text(surface, o.title, font_height, scry(y), style.menu_item_fg, selected)
                     self.menu_items_rects.append([tp, o.action])
+                elif selected:
+                    if self.prev_selection != self.menu_selection:
+                        #make current selection visible
+                        if scry(y) > dim.h:
+                            self.scroll_top += dim.h - font_height
+                        else:
+                            self.scroll_top = max(self.scroll_top + font_height - dim.h, 0)
+
                 y += font_height
+
+        self.prev_selection = self.menu_selection
 
         last = scry(y)
         if last < dim.height:
@@ -125,11 +137,15 @@ class  Menu:
         self.scroll_bar = pygame.Rect(dim.w-tp.height, 0, tp.height, dim.h)
         self.scroll_step = font_height
         self.scroll_scale = (y+font_height-dim.height)/dim.height
-        pygame.draw.rect(surface, style.scroll_bar_bg, self.scroll_bar)
+        if int(self.scroll_scale) == 0:
+            self.scroll_scale = 0
         if self.scroll_scale > 0:
+            pygame.draw.rect(surface, style.scroll_bar_bg, self.scroll_bar)
             handle_top = min(self.scroll_top / self.scroll_scale, dim.h-tp.height)
             self.scroll_bar_handle = pygame.Rect(dim.w-tp.height, handle_top, tp.height, tp.height)
             pygame.draw.rect(surface, style.scroll_bar_fg, self.scroll_bar_handle)
+        else:
+            pygame.draw.rect(surface, style.main_bg, self.scroll_bar)
                 
     def note_down(self, nn, notes_down):
         for m in self.menu:

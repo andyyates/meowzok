@@ -16,10 +16,12 @@ class Stylei:
         self.crash_piano = False
         self.lives = 10
         self.main_bg = (255,255,255)
+        self.main_bg_eek = (255,0,0)
         self.scroll_bar_bg = (200,200,200)
         self.scroll_bar_fg = (100,100,100)
         self.menu_item_bg = (255,255,255)
         self.menu_item_fg = (0,0,240)
+        self.menu_item_arrow = (0,0,0)
         self.midi_dir = os.path.join(main_dir+"/../midi/exercises/hanon")
         self.midi_in_port = None
         self.midi_out_port = None
