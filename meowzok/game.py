@@ -444,9 +444,10 @@ class Game:
             return key
 
     def mouse_down(self, pos):
-        items = [x for x in self.menu_items_rects if x[0].contains(pos)]
-        if len(items) > 0:
-            return items[0][1]
+        if hasattr(self, 'menu_items_rects'):
+            items = [x for x in self.menu_items_rects if x[0].contains(pos)]
+            if len(items) > 0:
+                return items[0][1]
 
     def mouse_up(self, pos):
         pass
