@@ -18,6 +18,7 @@ class Score:
         self.avaliable_notes = 0
         self.midifile = ""
         self.invalid = False
+        self.game = ""
 
     def printit(self):
         print("score ", self.bpm, self.errors, self.played_notes, self.grade())
@@ -51,7 +52,7 @@ def load_score(row):
     score = Score()
     if len(row) == 0:
         print("Error load_score - row is empty")
-        return score
+        return None
     score.midifile = row[0]
     try:
         score.date = datetime.datetime.fromisoformat(row[1])
@@ -99,7 +100,8 @@ def load_high_scores_for_game(path, gamename):
                 if len(row) > 6:
                     if row[0] == fn and row[6] == gamename:
                         score = load_score(row)
-                        scores.append(score)
+                        if score:
+                            scores.append(score)
                 else:
                     print("loading scores for game, csv row too short")
     scores.sort()
@@ -115,7 +117,8 @@ def load_high_scores():
             csv_reader = csv.reader(fd, delimiter=',')
             for row in csv_reader:
                 score = load_score(row)
-                scores.append(score)
+                if score:
+                    scores.append(score)
     scores.sort()
     scores.reverse()
     return scores
