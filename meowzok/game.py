@@ -51,7 +51,6 @@ class Score:
 def load_score(row):
     score = Score()
     if len(row) == 0:
-        print("Error load_score - row is empty")
         return None
     score.midifile = row[0]
     try:
@@ -458,6 +457,10 @@ class Game:
     def mouse_move(self, pos):
         pass
 
+    def note_up(self, nn):
+        if nn in self.keyboard.wrong_keys:
+            self.keyboard.wrong_keys.remove(nn)
+
     def note_down(self, nn, notes_down):
         if self.__prev_error_note in notes_down:
             ignore_error = 1
@@ -471,7 +474,7 @@ class Game:
         if self.timer_first_note_down == -1:
             self.timer_first_note_down = pygame.time.get_ticks()
 
-        self.keyboard.wrong_keys = notes_down
+        self.keyboard.wrong_keys.append(nn)
 
         rv = 0
         if self.next_active_note():

@@ -151,6 +151,9 @@ class  Menu:
         for m in self.menu:
             if m.nn == nn:
                 return m.action
+
+    def note_up(self, nn):
+        pass
         
     def mouse_down(self, pos):
         if self.scroll_scale>0 and self.scroll_bar_handle.contains(pos):
@@ -409,8 +412,62 @@ class HighScoreMenu(Menu):
     def __init__(self, up):
         super().__init__(up)
         self.title = "High scores"
-        self.messages = ["  %50s   %10s    %3s " % ("filename","last beat","grade")]
+        self.messages = ["%40s   %10s    %10s %3s " % ("filename","your quality","last played", "grade")]
         self.messages.append("")
+        self.sort = "played"
+
+    class HS:
+        def s(self, score, date, bpm):
+            if score>self.high_score:
+                self.high_score = score
+                self.high_score_date = date
+                self.bpm = bpm
+            if self.last_played == None or self.last_played < date:
+                self.last_played = date
+                self.last_played_score = score
+            self.scores.append(score)
+
+        def get_last_position(self):
+            print(self.name)
+            print(self.scores)
+            print(self.last_played_score)
+            self.scores.sort()
+            self.scores.reverse()
+            i = self.scores.index(self.last_played_score)
+            i += 1
+            v = "%d/%3d" % (i, len(self.scores))
+            return v
+
+    def make_HS(self, s):
+        if s.game == "Game_LeftHandOnly" or s.game == "Game_RightHandOnly":
+            return None
+        gn = s.game.replace("Game_","")
+        if gn == "RandomNotes":
+            gn = "Random"
+        if gn == "Game":
+            gn = ""
+        asdf = self.HS()
+        fn = s.midifile.replace(".mid","").replace("-"," ")
+        asdf.name = fn + " " + gn
+        asdf.midifile = s.midifile
+        asdf.game = s.game
+        asdf.high_score = 0
+        asdf.bpm = None
+        asdf.high_score_date = None
+        asdf.last_played = None
+        asdf.last_played_score = None
+        asdf.scores = []
+        return asdf
+
+
+
+    def toggle_sort(self):
+        if self.sort == "played":
+            self.sort = "hi"
+        else:
+            self.sort = "played"
+        #self.on_open()
+        return self
 
     def on_open(self):
         self.menu = []
@@ -421,30 +478,42 @@ class HighScoreMenu(Menu):
         for s in scores:
             k = s.midifile+s.game
             if k not in scores_by_game.keys():
-                scores_by_game[k] = s
-        scores = [v for k,v in scores_by_game.items()]
-        scores.sort(key=lambda s: s.date)
+                t = self.make_HS(s)
+                if not t:
+                    continue
+                scores_by_game[k] = t
+            else:
+                t = scores_by_game[k]
+            t.s(s.grade(), s.date, s.bpm)
+        
+
         today = datetime.datetime.now()
-        for s in scores:
-            if s.game == "Game_LeftHandOnly" or s.game == "Game_RightHandOnly":
-                continue
-            diff = today - s.date
-            if diff.days == 0:
-                d = "today"
+        def reltime(t):
+            diff = today - t
+            if diff.days < 1:
+                hours = diff.total_seconds()//3600
+                if hours < 2:
+                    return "1 hr"
+                else:
+                    return "%d hrs" % hours
             else:
                 if diff.days == 1:
-                    d = "1day"
+                    return "1 day"
+                elif diff.days < 60:
+                    return "%d days" % (diff.days)
                 else:
-                    d = "%d days" % (diff.days)
-            bpm = "%3.2f" % (s.bpm)
-            gn = s.game.replace("Game_","")
-            if gn == "RandomNotes":
-                gn = "Random"
-            if gn == "Game":
-                gn = ""
-            fn = s.midifile.replace(".mid","").replace("-"," ")
-            n = "%40s %10s  %10s    %3d " % (fn , gn, d, s.grade())
+                    return "%d Mths" % (diff.days//30)
 
+        scores = [v for k,v in scores_by_game.items()]
+        if self.sort == "hi":
+            scores.sort(key=lambda s: s.high_score_date)
+        else:
+            scores.sort(key=lambda s: s.last_played)
+
+        self.add_menu_item(title="sort:"+self.sort, action=[self.toggle_sort, []])
+        for s in scores:
+            bpm = "%3.2f" % (s.bpm)
+            n = "%40s %10s  %10s    %3d " % (s.name , s.get_last_position(), reltime(s.last_played), s.high_score)
             self.add_menu_item(title=n, action=[self._run_game, [s.game, s.midifile]])
 
     def find(self, name, path):
@@ -469,13 +538,24 @@ class HighScoreMenu(Menu):
 
 
 
-
-
 class MainMenu(Menu):
     def __init__(self):
         quitm = QuitMenu(self)
-        self.dir = self.midi_dir = style.midi_dir #note midi dir so we know when it gets changed in settings menu
         super().__init__(quitm)
+        self.title = " Meowzok"
+
+        self.add_menu_item(title=" hi scores",action=[HighScoreMenu, [self]])
+        self.add_menu_item(title=" Files",action=[FilePickMenu, [self]])
+        self.add_menu_item(title=" settings",action=[SettingsMenu, [self]])
+
+
+
+
+
+class FilePickMenu(Menu):
+    def __init__(self, up):
+        self.dir = self.midi_dir = style.midi_dir #note midi dir so we know when it gets changed in settings menu
+        super().__init__(up)
         self.title = " Meowzok"
         self.file_i = 0
         self.page = 0
@@ -485,9 +565,6 @@ class MainMenu(Menu):
     def rebuild_menu(self):
         self.menu = []
         self.scroll_top = 0
-        self.add_menu_item(title=" hi scores",action=[HighScoreMenu, [self]])
-
-        self.add_menu_item(title="",action="")
 
         if len(self.dir) > len(style.midi_dir):
             self.add_menu_item(title=" ..", action=[self.change_dir, [".."]])
@@ -501,9 +578,6 @@ class MainMenu(Menu):
                         path = self.dir+"/"+f
                         name = re.sub("[^A-Za-z0-9]"," ",f)#.replace(".mid",""))
                         self.add_menu_item(title=" "+name, action=[GameSelect, [self, path]])
-
-        self.add_menu_item(title="",action="")
-        self.add_menu_item(title=" settings",action=[SettingsMenu, [self]])
 
     def draw(self,surface):
         if self.midi_dir != style.midi_dir:
@@ -603,6 +677,9 @@ class B:
 
     def note_down(self,nn, notes_down):
         return self.act( self.cs.note_down(nn, notes_down) )
+
+    def note_up(self, nn):
+        return self.act( self.cs.note_up(nn)) 
 
     def draw(self, surface ):
         self.cs.draw(surface )

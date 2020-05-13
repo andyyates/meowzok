@@ -170,6 +170,7 @@ def main_loop(b):
                     if evt.command == "note_off" or (evt.command == "note_on" and evt.data2 == 0):
                         nn = evt.data1
                         process_note_off(nn)
+                        b.note_up(nn)
                         if style.midi_through and midi_out:
                             midi_out.note_off(nn)
                     elif evt.command == "note_on":

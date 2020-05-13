@@ -18,6 +18,7 @@ from meowzok.midifile import Note
 debug_always_load_cache = False
 debug_never_load_cache = False
 print_debug_msgs = False
+use_threading = True
 
 
 note_names = []
@@ -84,7 +85,7 @@ class LilyDots():
         self.thread_died = threading.Event()
         self.thread_error = ""
 
-        self.key_sigs = {-7:"ces",-6:"ges",-5:"des",-4:"aes",-3:"ees",-2:"bes",-1:"f",0:"c",1:"g",2:"d",3:"a",4:"e",5:"es",6:"fis",7:"cis" }
+        #self.key_sigs = {-7:"ces",-6:"ges",-5:"des",-4:"aes",-3:"ees",-2:"bes",-1:"f",0:"c",1:"g",2:"d",3:"a",4:"e",5:"es",6:"fis",7:"cis" }
 
         self.split_notes_into_pages()
         #check for cache images
@@ -92,17 +93,20 @@ class LilyDots():
             print("load from cache failed..")
         #    exit()
             #build images 
-            global _thread_handle
-            if _thread_handle:
-                _tstop()
-                _thread_handle.join()
-                _stop_event.clear()
+            if use_threading:
+                global _thread_handle
+                if _thread_handle:
+                    _tstop()
+                    _thread_handle.join()
+                    _stop_event.clear()
 
-            
-            _thread_handle = threading.Thread(target = self.__run_generate_images)
-            _thread_handle.start()
-            #self.generate_images()
-            #scan images to find notes
+                
+                _thread_handle = threading.Thread(target = self.__run_generate_images)
+                _thread_handle.start()
+                #self.generate_images()
+                #scan images to find notes
+            else:
+                self.__run_generate_images()
 
     def __run_generate_images(self):
         try:
@@ -292,6 +296,7 @@ class LilyDots():
 #                    this_file_mtime = os.path.getmtime(f)
 #                    midi_file_mtime = max(midi_file_mtime, this_file_mtime)
 
+    
         for p in self.pages:
             p.png_path = self.make_cache_file_name(p.i)+".png"
             p.csv_path = self.make_cache_file_name(p.i)+".csv"
@@ -487,16 +492,17 @@ class LilyDots():
                 \\override Score.BarNumber.break-visibility = ##(#t #t #t)
                 \\set Score.currentBarNumber = #%d
                 \\override Voice.NoteHead.color = #(x11-color 'red)
-                \\override Voice.Stem.color = #(x11-color 'red)
                 %s
                 }
                 """
 
         
+                #\\override Voice.Stem.color = #(x11-color 'red)
 
 
+        html_debug = ""
 
-
+        
         ts = self.midifile.time_sig
         for p in self.pages:
             note_body = ["",""]
@@ -524,14 +530,20 @@ class LilyDots():
                         note_body[clef] += t + " "
 
 
-
             
             
-            keysig = self.key_sigs[self.midifile.time_sig.key_sig_sharps]
-            if self.midifile.time_sig.key_sig_is_major:
-                keysig += " \\major"
+            
+            ks = self.midifile.time_sig.key_sig.lower()
+            if ks[-1] == "m":
+                keysig = ks[:-1]+" \\minor"
             else:
-                keysig += " \\minor"
+                keysig = ks + " \\major"
+            print("working keysig : ", keysig)
+            #keysig = self.key_sigs[self.midifile.time_sig.key_sig_sharps]
+            #if self.midifile.time_sig.key_sig_is_major:
+            #    keysig += " \\major"
+            #else:
+            #    keysig += " \\minor"
 
             body = ""
             current_bar = p.i * style.bars_per_page+1
@@ -563,9 +575,18 @@ class LilyDots():
 
             p.png_path = dirname + "/"+p.ly_name+".png"
             p.img = pygame.image.load(p.png_path)
-            self.inspect_images(p.i)
+            error = self.inspect_images(p.i)
+            
+            html_debug += "<br>pg %d<br>" % (p.i)
+            html_debug += "<img src=" + p.png_path + "><br>"
+            html_debug += error + "<br><br>"
 
 
+        dirname = os.path.dirname(self.make_cache_file_name(0))
+        f = open(dirname+"/index.html","w")
+        f.write(html_debug)
+        f.close()
+        
 
     def make_cache_file_name(self, i):
         gn = re.sub("[^a-zA-Z0-9]","_",self.midifile.name)
@@ -578,6 +599,7 @@ class LilyDots():
 
 
     def inspect_images(self, page_i):
+        error = ""
         p = self.pages[page_i]
         dim = p.img.get_rect()
 
@@ -586,46 +608,78 @@ class LilyDots():
         x_quantize = int(dim.w/max_notes_per_page)
             
         note_heads = []
-        note_xs = []
 
-        meld = 3
+        min_overlap = 10
+        meldx = 4
+        meldy = 4
+        meld =3 
 
         def stash(x,y):
-            head_rect  = pygame.Rect(x,y,meld,meld)
-            x_rect  = pygame.Rect(x,0,meld,6)
+            head_rect  = pygame.Rect(x-1,y-1,meldx,meldy)
+            alli = head_rect.collidelistall(note_heads)
+            al = [note_heads[i] for i in alli]
+            print("list is %d long - intersect with %d" % (len(note_heads), len(al)))
+            for i in al:
+                head_rect.union_ip(i)
+                note_heads.remove(i)
+            note_heads.append(head_rect)
 
-            i = head_rect.collidelist(note_heads)
-            if i==-1:
-                note_heads.append(head_rect)
-            else:
-                n = note_heads[i]
-                n.union_ip(head_rect)
 
-            i = x_rect.collidelist(note_xs)
-            if i==-1:
-                note_xs.append(x_rect)
-            else:
-                n = note_xs[i]
-                n.union_ip(x_rect)
+
+
+                    
+
+
+        #double check for other non colliders
+        
+#
+#            i = x_rect.collidelist(note_xs)
+#            if i==-1:
+#                note_xs.append(x_rect)
+#            else:
+#                n = note_xs[i]
+#                n.union_ip(x_rect)
 
 
 
 
         color_freq = {}
-        for y in range(0,dim.h,step):
-            last_found = 0
-            for x in range(0,dim.w,step):
+        for x in range(0,dim.w,step):
+            for y in range(0,dim.h,step):
                 v = p.img.get_at((x,y))
-                if v[0] != v[1]:
+                if v[0] != v[1]: # not black or white!
+                    c = min(v) #colour em in with correct alpha
+                    p.img.set_at((x,y), pygame.Color(c,c,c))
                     #print(v)
                 #if not (v[0] < 100 and v[1] < 100 and v[2] > 100):
-                    p.img.set_at((x,y), pygame.Color(0,0,0))
                     stash(x,y)
-        note_xs = [n for n in note_xs if n.width>meld*3]
+
+
+
+
+        note_xs = []
+        for n in note_heads:
+            xs = pygame.Rect(n.x,0,n.w,6)
+            print("Adding ", xs, xs.x, xs.y)
+            done = False
+            for o in note_xs:
+                if not ( o.x > xs.x+xs.w-min_overlap or o.x+o.w < xs.x+min_overlap ):
+                    o.union_ip(xs)
+                    print("Adding - Merged")
+                    done = True
+                    break
+            if done == False:
+                print("Adding - actually")
+                note_xs.append(xs)
+
+
+
+
+        #note_xs = [n for n in note_xs if n.width>meld*3]
 
         if print_debug_msgs:
             for n in note_heads:
-                pygame.draw.rect(p.img, (0,200,200), n, 1)
+                pygame.draw.rect(p.img, (0,random.randint(0,250), random.randint(0,250)), n, 1)
             x = 1
             for n in note_xs:
                 x += 10
@@ -653,10 +707,13 @@ class LilyDots():
                         tots.append(n.time)
 
         if len(tots) != len(p.note_xs):
-            print("Error on page %d - there should be %d NOT %d" % (p.i, len(tots), len(p.note_xs)))
+            er = "Error on page %d - there should be %d NOT %d" % (p.i, len(tots), len(p.note_xs))
+            print(er)
+            error += er
 
         p.loaded = True
 
+        return error
 
 
 

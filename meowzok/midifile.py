@@ -39,8 +39,8 @@ class TimeSig:
         #        7/128:"32..",
         #        7/256:"64.."
 
-        self.key_sig_sharps = 0
-        self.key_sig_is_major = 1
+        self.key_sig = "C"
+        #self.key_sig_is_major = 1
 
     def quantize_time(self, time):
         q = 1/64*self.ticks_per_beat*4
@@ -136,18 +136,20 @@ class MKMidiFile():
                     else:
                         k = row[0]
                         v = row[1]
-                        if k == "key_sig_sharps":
-                            try:
-                                self.time_sig.key_sig_sharps = int(v)
-                            except:
-                                print("Could not convert %s to int" % v)
-                        elif k == "key_sig_is_major":
-                            try:
-                                selt.time_sig.key_sig_is_major = bool(v)
-                            except:
-                                print("Could not convert %s to bool" %v)
-                        else:
-                            print("Unknown row in " + fn)
+                        pass
+                        #
+                        #if k == "key_sig_sharps":
+                        #    try:
+                        #        self.time_sig.key_sig_sharps = int(v)
+                        #    except:
+                        #        print("Could not convert %s to int" % v)
+                        #elif k == "key_sig_is_major":
+                        #    try:
+                        #        selt.time_sig.key_sig_is_major = bool(v)
+                        #    except:
+                        #        print("Could not convert %s to bool" %v)
+                        #else:
+                        #    print("Unknown row in " + fn)
 
     def __save_config_file(self, filename):
         fn = self.__make_config_file_name(filename)
@@ -206,6 +208,8 @@ class MKMidiFile():
                             #n.length_ticks = self.time_sig.quantize_length(l)
                             #n.time = self.time_sig.quantize_time(n.time)
                             #n.length_name = self.time_sig.get_length_name(n.length_ticks)
+                elif msg.type == "key_signature":
+                    self.time_sig.key_sig = msg.key
 
         tmp_notes.sort(key = lambda x: x.time)
 
