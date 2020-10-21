@@ -138,9 +138,9 @@ def check_requirements():
     except (ImportError, AssertionError, ValueError) as e:
         missing_reqs("pygame", pygame_req, e)
 
-    if not findlilly():
-        missing_reqs("lilypond", lilypond_req)
-        exit()
+    #if not findlilly():
+    #    missing_reqs("lilypond", lilypond_req)
+    #    exit()
 
 #
 #def setup_settings():
