@@ -135,16 +135,19 @@ class LilyDots():
             for i,tnl in enumerate(tnotes):
                 cnl = [n for n in anl if n.clef == i]
                 if len(cnl) > 0:
+                    #cnl[0].inspect()
+                    #print("bar ", cnl[0].time//bar_len)
                     n = Lilnote(ts.quantize_time(cnl[0].time), ts.quantize_length(cnl[0].length), [o.nn for o in cnl], "note")
                     tnl.append(n)
 
-        mln = 99999
-        for n in tnl:
-            mln = min(mln, n.length)
-            if n.length == 0:
-                print ("FOUNDiTHEiCULPRIT")
-
-                exit()
+#
+#        mln = 99999
+#        for n in tnl:
+#            mln = min(mln, n.length)
+#            if n.length == 0:
+#                print ("FOUNDiTHEiCULPRIT")
+#
+#                exit()
         #print("MIn length = ", mln)
 
         #insert bar checks
@@ -514,7 +517,7 @@ class LilyDots():
             has_notes = [False,False]
             for clef, notes in enumerate(p.notes):
                 for n in notes:
-                    print_note(n)
+                    #print_note(n)
                     if n.type == "bar":
                         note_body[clef] += " | "
                     elif n.type == "rest":

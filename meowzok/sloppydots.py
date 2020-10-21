@@ -1,14 +1,26 @@
 #!/usr/bin/python3
 import pygame
+import pygame.gfxdraw
 from meowzok.util import *
 import math
 from meowzok.style import style
+from meowzok.midifile import Note
+import statistics
+
 
 class Sprites:
     def __cut(self, x, y):
         rect = pygame.Rect((x*self.height,y*self.height,self.height,self.height))
         image = self.sheet.subsurface(rect)
         return image
+
+    def blit(self, target, src, x, y, right=False):
+        w,h = src.get_size()
+        if right:
+            target.blit(src, (x-w,y-h/2), None)
+        else:
+            target.blit(src, (x,y-h/2), None)
+
 
     def __init__(self, semih):
         self.width = self.height = semih * 18
@@ -19,138 +31,468 @@ class Sprites:
         for i in range(9,-1,-1):
             image = self.__cut(i,0)
             self.lines.append([ image , pygame.transform.rotate(image,180) ])
-        self.note_images = []
-        for i in range(10,16):
-            self.note_images.append([self.__cut(i,0), self.__cut(i,1)])
-        self.treble_clef = self.__cut(0,1)
-        self.bass_clef = self.__cut(1,1)
-        self.sharp = self.__cut(2,1)
-        self.flat = self.__cut(3,1)
-        self.natural = self.__cut(4,1)
         self.life = self.__cut(0,2)
         self.star = self.__cut(1,2)
         self.splat = self.__cut(2,2)
         self.splat_sharp = self.__cut(3,2)
         self.splat_blue = self.__cut(4,2)
 
-class Layout:
-    def __init__(self, w, h):
-        self.w = w
-        self.h = h
-        self.colw = colw = int(self.w/10)
-        self.semih = semih = int(self.h/56)
-        self.rowh = rowh = semih*8
-        self.sprites = Sprites(semih)
-        self.treb = pygame.Rect((0,semih*16,self.w,rowh))
-        self.bass = pygame.Rect((0,semih*32,self.w,rowh))
+        s = load_image("note-head-open.png")
+        s = pygame.transform.scale(s, (int(semih*1.5),semih*2))
+        self.note_head_open = s
+        self.note_head_width = int(semih*1.5)
 
+        s = load_image("note-head-closed.png")
+        s = pygame.transform.scale(s, (int(semih*1.5),semih*2))
+        self.note_head_closed = s
+
+        s = load_image("sharp.png")
+        self.sharp = pygame.transform.scale(s, (semih*4,semih*4))
+
+        s = load_image("flat.png")
+        self.flat = pygame.transform.scale(s, (semih*4,semih*4))
+
+        s = load_image("natural.png")
+        self.natural = pygame.transform.scale(s, (semih*4,semih*4))
+
+
+        s = load_image("bass.png")
+        self.bass_clef = pygame.transform.scale(s, (semih*5,semih*6))
+
+        s = load_image("treb.png")
+        self.treble_clef = pygame.transform.scale(s, (semih*5,semih*13))
+
+
+
+
+
+
+        
 
 
 class SloppyDots():
     def __init__(self, midifile):
         #game_name, midi_file_path, bars_per_page, notes, time_sig, size):
-        #self.layout.resize(size.w,size.h)
-        self.layout = Layout(100,100)
+        self.w, self.h = 0,0
+        self.resize(100,100)
         self.midifile = midifile
-        self.note_names = {0:"C",1:"C#/Db",2:"D",3:"D#/Eb",4:"E",5:"F",6:"F#/Gb",7:"G",8:"G#/Ab",9:"A",10:"A#/Bb",11:"B",12:"C",13:"C#/Db",14:"D",15:"D#/Eb",16:"E",17:"F",18:"F#/Gb",19:"G",20:"G#/Ab",21:"A",22:"A#/Bb",23:"B",24:"C",25:"C#/Db",26:"D",27:"D#/Eb",28:"E",29:"F",30:"F#/Gb",31:"G",32:"G#/Ab",33:"A",34:"A#/Bb",35:"B",36:"C",37:"C#/Db",38:"D",39:"D#/Eb",40:"E",41:"F",42:"F#/Gb",43:"G",44:"G#/Ab",45:"A",46:"A#/Bb",47:"B",48:"C",49:"C#/Db",50:"D",51:"D#/Eb",52:"E",53:"F",54:"F#/Gb",55:"G",56:"G#/Ab",57:"A",58:"A#/Bb",59:"B",60:"C",61:"C#/Db",62:"D",63:"D#/Eb",64:"E",65:"F",66:"F#/Gb",67:"G",68:"G#/Ab",69:"A",70:"A#/Bb",71:"B",72:"C",73:"C#/Db",74:"D",75:"D#/Eb",76:"E",77:"F",78:"F#/Gb",79:"G",80:"G#/Ab",81:"A",82:"A#/Bb",83:"B",84:"C",85:"C#/Db",86:"D",87:"D#/Eb",88:"E",89:"F",90:"F#/Gb",91:"G",92:"G#/Ab",93:"A",94:"A#/Bb",95:"B",96:"C",97:"C#/Db",98:"D",99:"D#/Eb",100:"E",101:"F",102:"F#/Gb",103:"G",104:"G#/Ab",105:"A",106:"A#/Bb",107:"B",108:"C",109:"C#/Db",110:"D",111:"D#/Eb",112:"E",113:"F",114:"F#/Gb",115:"G",116:"G#/Ab",117:"A",118:"A#/Bb",119:"B",120:"C",121:"C#/Db",122:"D",123:"D#/Eb",124:"E",125:"F",126:"F#/Gb",127:"G"}
 
-        self.note_length_images = {
-                "1":0,
-                "1.":0,
-                "2":1,
-                "2.":1,
-                "4":2,
-                "4.":2,
-                "8":3,
-                "8.":3,
-                "16":4,
-                "16.":4,
-                "32":5,
-                "32.":5,
-                "64":5,
-                "64.":5
-        }
+        self.key_signatures = [
+            [["C","Am"],[],False],
+            [["G","Em"],["F"],False],
+            [["D","Bm"],["F","C"],False],
+            [["A","F#m"],["F","C","G"],False],
+            [["E","C#m"],["F","C","G","D"],False],
+            [["B","G#m"],["F","C","G","D","A"],False],
+            [["F#","D#m"],["F","C","G","D","A","E"],False],
+            [["C#","A#m"],["F","C","G","D","A","E","B"],False],
+            [["F","Dm"],["B"],True],
+            [["Bb","Gm"],["B","E"],True],
+            [["Eb","Cm"],["B","E","A"],True],
+            [["Ab","Fm"],["B","E","A","D"],True],
+            [["Db","Bbm"],["B","E","A","D","G"],True],
+            [["Gb","Ebm"],["B","E","A","D","G","C"],True],
+            [["Cb","Abm"],["B","E","A","D","G","C","F"],True]
+            ]
+
+        
+        ks = [x[1:] for x in self.key_signatures if midifile.time_sig.key_sig in x[0]]
+        if len(ks) == 0:
+            print( "Can't find key sig ", midifile.time_sig.key_sig)
+            self.keysig = []
+            self.keysig_is_flat = 0
+        else:
+            self.keysig = ks[0][0]
+            self.keysig_is_flat = ks[0][1]
+            print("Keysig ", self.keysig, self.keysig_is_flat)
+
+        self.accidentals = [[],[]]
+        self.naturals = [[],[]]
+        self.keysig_is_flat = 0
+
+
+    def get_accidental(self, nn, clef):
+        note_name = "CDEFGAB"[self.get_note_row(nn) % 7]
+        #print("Get note ", nn, note_name, is_black(nn), self.keysig)
+        c = set(self.keysig + self.accidentals[clef]).difference(self.naturals[clef])
+        if is_black(nn):
+            if note_name in self.naturals[clef]:
+                self.naturals[clef].remove(note_name)
+            elif note_name not in c:
+                self.accidentals[clef].append(note_name)
+            else:
+                return ""
+            return ['sharp','flat'][self.keysig_is_flat]
+        else:
+            if note_name in c:
+                self.naturals[clef].append(note_name)
+                return "natural"
+            return ""
+        return ""
+
+    def clear_accidental(self):
+        self.accidentals = [[],[]]
+        self.naturals = [[],[]]
+
 
     def resize(self, w, h):
-        if self.layout.w == w and self.layout.h == h:
+        if self.w == w and self.h == h:
             return
+        self.w = w
+        self.h = h
+        self.rows = 50
+        self.sh = int(h / self.rows)
+        self.sprites = Sprites(self.sh)
+        fs = int(h/30)
+        self.font = pygame.font.SysFont(style.fonts[0], fs)
 
-        self.layout = Layout(w,h)
-        self.treb_pos = {}
-        prev = "C"
-        j = self.layout.treb[1]+self.layout.treb[3]+28*self.layout.semih
-        for i in range(0,127):
-            n = self.note_names[i]
-            if n.find(prev) == -1:
-                j -= self.layout.semih
-            self.treb_pos[i] = j
-            prev = n
 
-        self.bass_pos = {}
-        prev = "C"
-        j = self.layout.bass[1]+self.layout.bass[3]+16*self.layout.semih
-        for i in range(0,127):
-            n = self.note_names[i]
-            if n.find(prev) == -1:
-                j -= self.layout.semih
-            self.bass_pos[i] = j
-            prev = n
+
+    class Clef:
+        def __init__(self, middle_row, sh):
+            #row zero is the bottom line of the cleff (so G or E)
+            self.low = 1270
+            self.hi = 0
+            self.middle_y = 0
+            self.middle_row = middle_row
+            self.sh = sh
+
+        def r2y(self, r):
+            return (self.middle_row - r) * self.sh + self.middle_y
+
+    #def draw(self, surface, active_i=None, notes=[], time_sig=None, time=None):
+    def draw_music(self, surface, page_i):
+        print("DRAW MUSIC", page_i)
+        self.dim = dim = surface.get_rect()
+        self.resize(dim.width, dim.height)
+        surface.fill(style.stave_bg) #(1,200,2))
+        bar_len_ticks = self.midifile.time_sig.get_bar_len()
+        left_pad = self.sprites.width
+        time_to_px = (self.w - left_pad) / (bar_len_ticks*style.bars_per_page)
+        left_bar = page_i * style.bars_per_page
+        left_time = left_bar * bar_len_ticks
+        right_time = left_time + (style.bars_per_page * bar_len_ticks)
+
+        display_notes = []
+        for nl in self.midifile.active_notes:
+            for n in nl:
+                if n.time >= left_time - 50 and n.time < right_time:
+                    display_notes.append(nl)
+                    break
+        
+        #min max by clef
+        self.clefs = [self.Clef(41,self.sh), self.Clef(29,self.sh)]
+        for nl in display_notes:
+            for n in nl:
+                self.clefs[n.clef].low = min(self.clefs[n.clef].low, self.get_note_row(n.nn))
+                self.clefs[n.clef].hi = max(self.clefs[n.clef].hi, self.get_note_row(n.nn))
+        self.clefs[0].middle_y = int(self.h * 1/4)
+        self.clefs[1].middle_y = int(self.h * 3/4)
+
+        #bass = 25,33
+        #treb = 35,43
+        self.clefs[0].top_row = 46
+        self.clefs[0].bottom_row = 37
+        self.clefs[1].top_row = 34
+        self.clefs[1].bottom_row = 25
+
+        c = self.clefs[0]
+        for r in range(c.bottom_row,c.top_row+1,2):
+            pygame.draw.rect(surface, style.stave_lines, (0, self.clefs[0].r2y(r), self.w, 2))
+        surface.blit(self.sprites.treble_clef, (self.sh,self.clefs[0].r2y(46)), None)
+
+        c = self.clefs[1]
+        for r in range(c.bottom_row,c.top_row+1,2):
+            pygame.draw.rect(surface, style.stave_lines, (0, self.clefs[1].r2y(r), self.w, 2))
+        surface.blit(self.sprites.bass_clef, (self.sh,self.clefs[1].r2y(32)), None)
+
+        #draw key sig
+        k = 7
+        for i in range(0,7):
+            if 'CDEFGAB'[i] in self.keysig:
+                for j in range(0,2):
+                    c = self.clefs[j]
+                    row = (c.top_row // 7)*7 + i
+                    if self.keysig_is_flat:
+                        self.sprites.blit(surface, self.sprites.flat, self.sh*k, c.r2y(row))
+                    else:
+                        self.sprites.blit(surface, self.sprites.sharp, self.sh*k, c.r2y(row))
+                    k += 1
+
+
+
+
+        #draw bar lines & numbers
+        for i in range(left_time, right_time+1, bar_len_ticks):
+            bar_no = int(i/bar_len_ticks)+1
+            l = (i-left_time) * time_to_px + left_pad - self.sh*2
+            if i < right_time:
+                text = self.font.render(str(bar_no), 1, (10, 10, 10))
+                textpos = text.get_rect()
+                textpos.left = l
+                textpos.bottom= self.clefs[0].r2y(43)
+                surface.blit(text, textpos)
+            pygame.draw.rect(surface, style.stave_fg, (l, self.clefs[0].r2y(45), 2, self.sh*8))
+            pygame.draw.rect(surface, style.stave_fg, (l, self.clefs[1].r2y(33), 2, self.sh*8))
+
+
+
+ 
+
+
+
+        last_time = -1
+        for nl in display_notes:
+            #nudge heads that overlap
+            for clef in [0,1]:
+                prev_row = None
+                for n in reversed(nl):
+                    if n.clef == clef:
+                        self.__set_note_y(n)
+                        if prev_row != None:
+                            n.nudge = abs(prev_row - n.row) < 2
+                        else:
+                            n.nudge = 0
+                        prev_row = n.row
+
+        #group notes for beaming
+        beams = [[[]],[[]]]
+        if self.midifile.time_sig.numerator % 3 == 0:
+            half_bar_len_ticks = bar_len_ticks//3
+        else:
+            half_bar_len_ticks = bar_len_ticks//2
+        for nl in display_notes:
+            for n in nl:
+                if n.time < left_time - 50 or n.time > right_time:
+                    continue
+                pg = beams[n.clef][-1]
+                if n.time in [n.time for n in pg]:
+                    pg.append(n)
+                    continue
+
+                #start a new group when
+                if len(pg)>0:
+                    #more than 4 things in a group
+                    if len(set([n.time for n in pg]))>3:
+                        pg = []
+                        beams[n.clef].append(pg)
+                    else: 
+                        ln = pg[-1]
+                        #on a bar or half bar
+                        if ln.time // half_bar_len_ticks != n.time // half_bar_len_ticks:
+                            pg = []
+                            beams[n.clef].append(pg)
+                        #when an unbeamer appears
+                        elif (n.beamy == 0 or ln.beamy == 0) and ln.time != n.time:
+                            pg = []
+                            beams[n.clef].append(pg)
+                        #when previous note is above n ticks prior
+                        elif n.time - ln.time > bar_len_ticks/4:
+                            pg = []
+                            beams[n.clef].append(pg)
+
+#                if n.beamy == 0:
+#w                    continue
+                pg.append(n)
+
+
+        for grp in beams[0]+beams[1]:
+            if len(grp) == 0:
+                continue
+            print(grp[0].clef, len(grp), " ".join([n.length_name for n in grp]))
+            avgnn = statistics.mean([n.nn for n in grp])
+            stickup = (grp[0].clef == 0 and avgnn < 70 ) or (grp[0].clef == 1 and avgnn < 49)
+
+            #draw note heads
+            for n in grp:
+                print(n.nn, n.clef)
+                if n.time >= left_time - 50 and n.time < right_time:
+                    n.x = (n.time - left_time) * time_to_px + left_pad 
+                    if last_time // bar_len_ticks != n.time // bar_len_ticks:
+                        self.clear_accidental()
+                    last_time = n.time
+                    self.__draw_note(n, surface, stickup)
+
+
+
+
+            if len(set([n.time for n in grp])) == 1:
+                if stickup :
+                    avgy = min([n.y for n in grp])
+                else:
+                    avgy = max([n.y for n in grp])
+            else:
+                avgy = statistics.mean([n.y for n in grp])
+
+            stemlen = self.sh*6
+            tw = self.sh//2
+            #draw tails first
+            if len(set([n.time for n in grp])) == 1:
+                #just a single one
+                d = self.sh*2
+                for l in range(0,grp[0].beamy):
+                    if stickup:
+                        pygame.draw.rect(surface, style.stave_fg, (grp[0].x+self.sprites.note_head_width-2,avgy-stemlen+self.sh*l,d, tw))
+                    else:
+                        pygame.draw.rect(surface, style.stave_fg, (grp[0].x,avgy+stemlen-self.sh*l,d, tw))
+            else:
+                #an actual group
+                for i,n in enumerate(grp[:-1]):
+                    d = int((grp[i+1].time - n.time ) * time_to_px + 2)
+                    for l in range(0,n.beamy):
+                        if stickup:
+                            pygame.draw.rect(surface, style.stave_fg, (n.x+self.sprites.note_head_width-2,avgy-stemlen+self.sh*l,d, tw))
+                        else:
+                            pygame.draw.rect(surface, style.stave_fg, (n.x,avgy+stemlen-self.sh*l,d, tw))
+            #draw stems
+            for n in grp:
+                if stickup == 1:
+                    h = avgy-stemlen-n.y
+                    pygame.draw.rect(surface, style.stave_fg, (n.x+self.sprites.note_head_width-2,n.y,2,h))
+                else:
+                    h = avgy+stemlen-n.y
+                    pygame.draw.rect(surface, style.stave_fg, (n.x,n.y,2,h))
+
+
+
+    def __draw_note(self, note, surface, stickup):
+        note.x = x = int(note.x)
+        note.y = y = int(note.y) 
+        color = (0,0,0)
+        note.length_name = n = self.midifile.time_sig.get_length_name(note.length)
+        dotted = n[-1] == "."
+        c = self.clefs[note.clef]
+
+        #draw dash above and below staves
+        if note.row > c.top_row:
+            for r in range(c.top_row+1, note.row+1, 2):
+                pygame.draw.rect(surface, style.stave_fg, (note.x-self.sh*0.25, c.r2y(r), self.sh*2, 2))
+        elif note.row < c.bottom_row:
+            for r in range(c.bottom_row-2, note.row-1, -2):
+                pygame.draw.rect(surface, style.stave_fg, (note.x-self.sh*0.25, c.r2y(r), self.sh*2, 2))
+
+        #draw note head
+        if dotted:
+            n = n[:-1]
+            #todo - blit the dot
+        if note.nudge :
+            if stickup:
+                x += self.sprites.note_head_width-2
+            else:
+                x -= self.sprites.note_head_width-2
+        if n== "1":
+            self.sprites.blit(surface, self.sprites.note_head_open, x, y)
+            note.beamy = -1
+        elif n== "2":
+            self.sprites.blit(surface, self.sprites.note_head_open, x, y)
+            note.beamy = 0
+        elif n== "4":
+            self.sprites.blit(surface, self.sprites.note_head_closed, x, y)
+            note.beamy = 0
+        elif n== "8":
+            self.sprites.blit(surface, self.sprites.note_head_closed, x, y)
+            note.beamy = 1
+        elif n== "16":
+            self.sprites.blit(surface, self.sprites.note_head_closed, x, y)
+            note.beamy = 2
+        elif n== "32":
+            self.sprites.blit(surface, self.sprites.note_head_closed, x, y)
+            note.beamy = 3
+        elif n== "64":
+            self.sprites.blit(surface, self.sprites.note_head_closed, x, y)
+            note.beamy = 4
+
+        
+
+
+        accident = self.get_accidental(note.nn, note.clef)
+        if accident == "sharp":
+            self.sprites.blit(surface, self.sprites.sharp, x, y, right=True)
+        elif accident == "flat":
+            self.sprites.blit(surface, self.sprites.flat, x, y, right=True)
+        elif accident == "natural":
+            self.sprites.blit(surface, self.sprites.natural, x, y, right=True)
 
 
     
 
+    def blob_note(self, surface, active_note_i, nn, offset):
+        nl = self.midifile.active_notes[active_note_i] 
 
-    def __draw_st(self, stave, surface, icon):
-        #pygame.draw.rect(surface, color.stave_bg, stave)
-        l,t,w,h=stave
-        w = surface.get_rect().w
-        for i in range(0,9,2):
-            pygame.draw.rect(surface, style.stave_fg, (0, t+self.layout.semih*i, w, 1))
-        surface.blit(icon, (l,t-self.layout.rowh/2), None)
+        if not nn:
+            for note in nl:
+                x = int(note.x) + offset.left
+                y = offset.top
+                w = 10
+                pygame.draw.polygon(surface, style.blob_pointer, ((x,y),(x+w,y),(x+w/2,y+w),(x,y)))
+                break
+            return
+
+        
+
+        
+        clefs = set([n.clef for n in nl])
+        for clef in clefs:
+            for note in nl:
+                nn.clef = clef
+                self.__set_note_y(nn)
+                x = int(note.x) + offset.left - self.sh
+                y = int(nn.y) + offset.top
+                pygame.draw.circle(surface, style.blob_blob, (x,y), self.sh, 1)
+                break
 
 
-    #def draw(self, surface, active_i=None, notes=[], time_sig=None, time=None):
-    def draw_music(self, surface, page_i):
-        dim = surface.get_rect()
-        self.resize(dim.width, dim.height)
 
-        #copy current frame to rect
-        #draw time line on
-        #draw notes down on
 
-        surface.fill(style.bg)
-        self.__draw_st(self.layout.treb, surface, self.layout.sprites.treble_clef)
-        self.__draw_st(self.layout.bass, surface, self.layout.sprites.bass_clef)
+    def get_note_row(self, nn):
+        octave = nn // 12
+        nn %= 12
+        #is there a one liner to do this?
+        if self.keysig_is_flat:
+            if nn < 1:
+                row = 0
+            elif nn < 3:
+                row = 1
+            elif nn < 5:
+                row = 2
+            elif nn == 5:
+                row = 3
+            elif nn < 8:
+                row = 4
+            elif nn < 10:
+                row = 5
+            else:
+                row = 6
+        else:
+            if nn < 2:
+                row = 0
+            elif nn < 4:
+                row = 1
+            elif nn == 4:
+                row = 2
+            elif nn < 7:
+                row = 3
+            elif nn < 9:
+                row = 4
+            elif nn < 11:
+                row = 5
+            else:
+                row = 6
+        row += octave * 7
 
-        bar_len_ticks = self.midifile.time_sig.get_bar_len()
-        left_pad = self.layout.sprites.width
-        time_to_px = (self.layout.treb.width - left_pad) / (bar_len_ticks*style.bars_per_page)
-        #print("calc next page")
-        #print(time, style.bars_per_page, self.bar_len_ticks)
-        left_bar = page_i * style.bars_per_page
-        #print(left_bar)
-        left_time = left_bar * bar_len_ticks
-        right_time = left_time + (style.bars_per_page * bar_len_ticks)
-        #print("Drawing new staves", left_time, right_time, time, left_bar)
-        for nl in self.midifile.active_notes:
-            for n in nl:
-                if n.time >= left_time - 50 and n.time < right_time:
-                    n.x = (n.time - left_time) * time_to_px + left_pad - self.layout.sprites.width/2
-                    #print(n.time, right_time, self.layout.note_names[n.nn], n.clef)
-                    self.__draw_note(n, surface)
-        for i in range(left_time, right_time+1, bar_len_ticks):
-            bar_no = int(i/bar_len_ticks)+1
-            
-            #text = self.layout.font.render(str(bar_no), 1, (10, 10, 10))
-            l = (i-left_time) * time_to_px + left_pad - self.layout.semih*2
-            #textpos = text.get_rect()
-            #textpos.left = l
-            #textpos.bottom= self.layout.treb.top
-            #surface.blit(text, textpos)
-            pygame.draw.rect(surface, style.stave_fg, (l, self.layout.treb.top, 2, self.layout.semih * 8))
-            pygame.draw.rect(surface, style.stave_fg, (l, self.layout.bass.top, 2, self.layout.semih * 8))
+        return row
 
-    def draw_time_line(self, surface, offset, page_i, time):
+
+
+    def __set_note_y(self, note):
+        note.row = self.get_note_row(note.nn)
+        note.y = self.clefs[note.clef].r2y(note.row)
+
+
+
+
+
+    def draw_time_line(self, surface, offset, page_i, time, active_i):
         xo = offset.x
         yo = offset.y
         bar_len_ticks = self.midifile.time_sig.get_bar_len()
@@ -159,81 +501,9 @@ class SloppyDots():
         right_time = left_time + (style.bars_per_page * bar_len_ticks)
         if time < left_time or time > right_time:
             return
-        left_pad = self.layout.sprites.width
-        time_to_px = (self.layout.treb.width - left_pad) / (bar_len_ticks*style.bars_per_page)
+        left_pad = self.sprites.width
+        time_to_px = (self.w - left_pad) / (bar_len_ticks*style.bars_per_page)
         l = (time - left_time) * time_to_px + left_pad
-        pygame.draw.rect(surface, style.time_line, (l+xo, self.layout.treb.top+yo, 2, self.layout.semih * 8))
-        pygame.draw.rect(surface, style.time_line, (l+xo, self.layout.bass.top+yo, 2, self.layout.semih * 8))
-
-
-
-    def blob_note(self, surface, active_note_i, nn, color, offset):
-        nl = self.midifile.active_notes[active_note_i]
-        for note in nl:
-            self.__set_note_y(note)
-            c = self.layout.sprites.width/2
-            x = int(note.x+c) + offset.left
-            y = int(note.y+c) + offset.top
-            pygame.draw.circle(surface, color, (x,y), self.layout.semih)
-
-
-    def __set_note_y(self, note):
-        if note.clef == 0:
-            c = self.layout.treb
-            note.y = self.treb_pos[note.nn]
-        else:
-            c = self.layout.bass
-            note.y = self.bass_pos[note.nn]
-
-
-
-    def __draw_note(self, note, surface, alt_sprite = None, alt_sprite_sharp = None):
-
-        self.__set_note_y(note)
-        if note.clef == 0:
-            l,t,w,h = self.layout.treb
-        else:
-            l,t,w,h = self.layout.bass
-        y = note.y+self.layout.semih*8
-
-        if_flip = 0
-        has_lines = -1
-
-        if alt_sprite:
-            note.sprite = alt_sprite
-            surface.blit(alt_sprite, (note.x, note.y), None)
-            if is_sharp(note.nn):
-                surface.blit(alt_sprite_sharp, (note.x-self.layout.semih*2, note.y), None)
-        else:
-            sprite = self.layout.sprites.note_images[self.note_length_images[note.length_name]]
-            if y < t - self.layout.semih*2:
-                i = int((t-y)/self.layout.semih)-3
-                if i > 9:
-                    i = 9
-                if i < 0:
-                    i = 0
-                is_flip = 1
-                has_lines = i
-            elif y < t+h/2:
-                is_flip = 1
-            elif y <= t+h:
-                is_flip = 0
-            else:
-                i = int((y-t-h)/self.layout.semih)-1
-                if (i>9):
-                    i = 9
-                if i < 0:
-                    i = 0
-                is_flip = 0
-                has_lines = i
-
-            if has_lines > -1:
-                surface.blit(self.layout.sprites.lines[has_lines][is_flip], (note.x, note.y), None)
-            note.sprite = sprite[is_flip]
-            surface.blit(sprite[is_flip], (note.x, note.y), None)
-
-            if(is_sharp(note.nn)):
-                surface.blit(self.layout.sprites.sharp, (note.x-self.layout.semih*2, note.y), None)
-
+        pygame.draw.rect(surface, style.time_line, (l+xo, 0, 2, self.dim.height))
 
 

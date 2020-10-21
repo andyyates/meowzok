@@ -152,7 +152,7 @@ class  Menu:
             if m.nn == nn:
                 return m.action
 
-    def note_up(self, nn):
+    def note_up(self, nn, notes_down):
         pass
         
     def mouse_down(self, pos):
@@ -316,6 +316,8 @@ class SettingsMenu(Menu):
                     style.on_error = style.on_error_options[0]
             elif set_key == "fullscreen":
                 style.fullscreen = set_value == "True"
+            elif set_key == "invert":
+                style.invert = set_value == "True"
             elif set_key == "set_speed":                
                 style.speed = self.speeds.index(set_value)
             elif set_key == "midi_through":
@@ -346,8 +348,8 @@ class SettingsMenu(Menu):
 
         self.add_menu_item( title="on error           : %s " % (style.on_error), action=[OptionsMenu, [self, "On error",style.on_error_options, "on_error", style.on_error,"When you play a wrong note - not that you ever would, but if you did, then do you want to just have another stab at that one note - or go back to the start of the bar where you screwed up? If your learning sight reading and trying to play piano without looking at the keys, probably best to have this as stop. If you want to play something from memory then it makes more sense to go back to the start of the bar"]])
 
-        #spdname = self.speeds[style.speed]
-        #self.add_menu_item( title="game speed         : %s" % ( spdname ) , action=[OptionsMenu, [self, "Game speed", self.speeds, "set_speed", spdname,"This is a redundant option, I'll probably take it out soon, but if you want to play against the machine, set this to anything but the first option and a nasty line will track across the music and you have to play faster than it to stay alive. Best just select the first option and be done with it"]])
+        spdname = self.speeds[style.speed]
+        self.add_menu_item( title="game speed         : %s" % ( spdname ) , action=[OptionsMenu, [self, "Game speed", self.speeds, "set_speed", spdname,"This is a redundant option, I'll probably take it out soon, but if you want to play against the machine, set this to anything but the first option and a nasty line will track across the music and you have to play faster than it to stay alive. Best just select the first option and be done with it"]])
         self.add_menu_item( title="midi files         : %s" % (style.midi_dir), action=[PathPicker, [self, "Midi files:", True, "set_midi_dir", style.midi_dir,"Where do you keep your midi files, i'm sure you have lots. Tell me where. Click the single dot to select the directory for use"]])
 
         if style.fullscreen:
@@ -355,6 +357,14 @@ class SettingsMenu(Menu):
         else:
             s = "False"
         self.add_menu_item( title="fullscreen         : %s " % (s), action=[OptionsMenu, [self, "Fullscreen",["True","False"], "fullscreen", s,"Ronseal"]])
+
+
+        if style.invert:
+            s = "True"
+        else:
+            s = "False"
+        self.add_menu_item( title="invert             : %s " % (s), action=[OptionsMenu, [self, "invert",["True","False"], "invert", s,"Ronseal"]])
+
 
 
         if style.midi_through:
@@ -434,9 +444,12 @@ class HighScoreMenu(Menu):
             self.scores.sort()
             self.scores.reverse()
             i = self.scores.index(self.last_played_score)
-            i += 1
-            v = "%d/%3d" % (i, len(self.scores))
-            return v
+            if i == 0:
+                return "** #1 **"
+            else:
+                i += 1
+                v = "%d/%3d" % (i, len(self.scores))
+                return v
 
     def make_HS(self, s):
         if s.game == "Game_LeftHandOnly" or s.game == "Game_RightHandOnly":
@@ -569,10 +582,10 @@ class FilePickMenu(Menu):
         if len(self.dir) > len(style.midi_dir):
             self.add_menu_item(title=" ..", action=[self.change_dir, [".."]])
         if os.path.exists(self.dir):
-            for f in sorted(os.listdir(self.dir)):
+            for f in sorted(os.listdir(self.dir), key=str.casefold):
                 if os.path.isdir(self.dir+"/"+f):
                     self.add_menu_item(title="+"+f, action=[self.change_dir, [f]])
-            for f in sorted(os.listdir(self.dir)):
+            for f in sorted(os.listdir(self.dir), key=str.casefold):
                 if not os.path.isdir(self.dir+"/"+f):
                     if f.endswith(".mid"):
                         path = self.dir+"/"+f
@@ -678,8 +691,8 @@ class B:
     def note_down(self,nn, notes_down):
         return self.act( self.cs.note_down(nn, notes_down) )
 
-    def note_up(self, nn):
-        return self.act( self.cs.note_up(nn)) 
+    def note_up(self, nn, notes_down):
+        return self.act( self.cs.note_up(nn, notes_down)) 
 
     def draw(self, surface ):
         self.cs.draw(surface )

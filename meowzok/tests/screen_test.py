@@ -33,10 +33,13 @@ lilydots.debug_never_load_cache = True
 lilydots.print_debug_msgs = True
 
 
+gtestmidifile = style.style.midi_dir + "/songs/hark-the-herald-angels-sing.mid"
 #gtestmidifile = style.style.midi_dir+"/RondoAllaTurca.mid"
-#gtestmidifile = style.style.midi_dir+"/i-want-to-sing-in-opera.mid"
-#gtestmidifile = style.style.midi_dir+"/Tetris.mid"
-gtestmidifile = style.style.midi_dir+"/boccherini_minuet.mid"
+#gtestmidifile = style.style.midi_dir+"/songs/boccherini_minuet.mid"
+gtestmidifile = style.style.midi_dir+"/songs/i-want-to-sing-in-opera.mid"
+##gtestmidifile = style.style.midi_dir+"/Tetris.mid"
+#gtestmidifile = style.style.midi_dir+"/songs/boccherini_minuet.mid"
+#gtestmidifile = style.style.midi_dir+"/songs/russian-spy.mid"
 
 
 
@@ -100,8 +103,8 @@ class TestScreen(unittest.TestCase):
     def game(self):
         self.midifile = midifile.MKMidiFile(gtestmidifile)
         self.game = game.Game(None, self.midifile)
-        self.game.active_i = 30
-        self.game.page_i = 1
+        self.game.active_i = 0
+        self.game.page_i = 0
         self.b.cs = self.game
         self.b.cs.menu_up = "quit"
         app.running = grunning

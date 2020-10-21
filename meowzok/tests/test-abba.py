@@ -27,8 +27,8 @@ lilydots.use_threading = False
 lilydots.debug_always_load_cache = False
 lilydots.print_debug_msgs = True
 #mf = midifile.MKMidiFile("/home/pj/midi/songs/hark-the-herald-angels-sing.mid")
-#mf = midifile.MKMidiFile("/home/pj/midi/songs/ABBA-DancingQueen.mid")
-mf = midifile.MKMidiFile("/home/pj/midi/songs/frankly_muse.mid")
+mf = midifile.MKMidiFile("/home/pj/midi/songs/ABBA-DancingQueen.mid")
+#mf = midifile.MKMidiFile("/home/pj/midi/songs/frankly_muse.mid")
 mf.cacheable = False
 l = lilydots.LilyDots(mf)
 

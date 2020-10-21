@@ -13,10 +13,10 @@ import random
 import sys
 import time
 
-#import meowzok.sloppydots as MKDots
-#style.dot_class = MKDots.SloppyDots
-import meowzok.lilydots as Dots
-style.dot_class = Dots.LilyDots
+import meowzok.sloppydots as MKDots
+style.dot_class = MKDots.SloppyDots
+#import meowzok.lilydots as Dots
+#style.dot_class = Dots.LilyDots
 
 event_get = pygame.fastevent.get
 clock = pygame.time.Clock()
@@ -170,7 +170,7 @@ def main_loop(b):
                     if evt.command == "note_off" or (evt.command == "note_on" and evt.data2 == 0):
                         nn = evt.data1
                         process_note_off(nn)
-                        b.note_up(nn)
+                        b.note_up(nn, notes_down)
                         if style.midi_through and midi_out:
                             midi_out.note_off(nn)
                     elif evt.command == "note_on":
@@ -193,6 +193,10 @@ def main_loop(b):
         clock.tick(30)
         b.advance()
         b.draw(surface)
+        if style.invert:
+            pixels = pygame.surfarray.pixels2d(surface)
+            pixels ^= 2 ** 32 - 1
+            del pixels
         screen.blit(surface, (0, 0))
         pygame.display.update()
 

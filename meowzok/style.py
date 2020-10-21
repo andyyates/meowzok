@@ -6,6 +6,9 @@ import csv
 class Stylei:
     def __init__(self):
         main_dir = os.path.split(os.path.abspath(__file__))[0]+"/"
+        self.fonts = [f for f in pygame.font.get_fonts() if 'mono' in f]
+        if len(self.fonts) == 0:
+            raise "Must have a mono font installed to work"
         self.bars_per_page = 4
         self.bg = (240,240,240)
         self.bpm = (0,0,0)
@@ -23,6 +26,7 @@ class Stylei:
         self.menu_item_fg = (0,0,240)
         self.menu_item_arrow = (0,0,0)
         self.midi_dir = os.path.join(main_dir+"/../midi/exercises/hanon")
+        self.invert = False
         self.midi_in_port = None
         self.midi_out_port = None
         self.midi_through = None
@@ -36,11 +40,14 @@ class Stylei:
         self.on_error = self.on_error_options[0]
         self.speed = 0
         self.stave_bg = (255,255,255)
+        self.stave_lines = (150,150,150)
         self.stave_fg = (0,0,0)
         self.time_inc = 15
         self.time_line = (0,200,200)
         self.title_fg = (0,0,0)
         self.title_win = (0,200,0)
+        self.blob_pointer = (200,0,200)
+        self.blob_blob = (200,0,200)
         self.load()
 
 
@@ -60,7 +67,7 @@ class Stylei:
         #print("RESIZE STYLEee", w,h)
         self.screensize = (w,h)
         fs = int(h/30)
-        self.font = pygame.font.SysFont("dejavusansmono", fs)
+        self.font = pygame.font.SysFont(self.fonts[0], fs)
 
     def save(self):
         print("save config to ", self.config_file_path)
@@ -80,6 +87,11 @@ class Stylei:
                 writer.writerow(["fullscreen", "True"])
             else:
                 writer.writerow(["fullscreen", "False"])
+            if self.invert:
+                writer.writerow(["invert", "True"])
+            else:
+                writer.writerow(["invert", "False"])
+
             if self.crash_piano:
                 writer.writerow(["crash_piano", "True"])
             else:
@@ -120,6 +132,8 @@ class Stylei:
                                 self.speed = int(v)
                             elif k=="fullscreen":
                                 self.fullscreen = v == "True"
+                            elif k=="invert":
+                                self.invert = v == "True"
                             elif k=="kbd_highest_note":
                                 self.kbd_highest_note = int(v)
                             elif k=="kbd_lowest_note":

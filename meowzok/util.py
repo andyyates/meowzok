@@ -15,7 +15,7 @@ def high_scores_filename():
     return rv
 
 
-def is_sharp(nn):
+def is_black(nn):
     return nn%12 in [1,3,6,8,10]
 
 

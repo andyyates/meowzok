@@ -16,7 +16,7 @@ class Keyboard:
         self.wrong_keys = []
         self.keys = []
         for i in range(21, 109):
-            if is_sharp(i):
+            if is_black(i):
                 self.keys.append(Key(i, 1 , None))
             else:
                 self.keys.append(Key(i, 0, None))
@@ -32,7 +32,7 @@ class Keyboard:
         self.h = h
         x = (w - (self.key_w*52)) / 2
         for k in self.keys:
-            if is_sharp(k.nn):
+            if is_black(k.nn):
                 k.rect = pygame.Rect(x-key_w/3+offset.left, offset.top, key_w*2/3, h * 0.6)
             else:
                 k.rect = pygame.Rect(x+offset.left, offset.top, self.key_w, h)

@@ -136,6 +136,7 @@ class Game:
         self.__active_notes = []
         self.done_notes = []
         self.midifile = midifile
+        self.redrawme = True
 
         for nl in self.midifile.notes:
             for n in nl:
@@ -148,10 +149,9 @@ class Game:
         self.__setup_level()
         self.__rebuild_dots()
         self.dead_count = 0
-        self.last_drawn_level = -1
         self.last_drawn_page = -1
         self.page_i = 0
-        self.notes_down = None
+        self.l_notes_down = []
         self.keyboard = Keyboard()
         self.high_scores = load_high_scores_for_game(self.midifile.path, type(self).__name__)
         if len(self.high_scores)>0:
@@ -200,6 +200,8 @@ class Game:
         self.stave_position = pygame.Rect(0,int(h/4),w,int(h/2))
         self.dot_surface = pygame.Surface((self.stave_position.w,self.stave_position.h))
         self.last_drawn_page = -1
+        print("resize")
+        self.redrawme = True
 
     def __rebuild_dots(self):
         self.resize()
@@ -211,7 +213,10 @@ class Game:
     def goto_page(self, time):
         page_size = self.midifile.time_sig.get_bar_len()*style.bars_per_page
         pno = int(time/page_size)
-        self.page_i = pno
+        if self.page_i != pno:
+            self.page_i = pno
+            print("goto page")
+            self.redrawme = True
 
     def back_up_to_bar(self):
         if self.active_i < 0:
@@ -223,6 +228,8 @@ class Game:
         self.__time = t-self.midifile.time_sig.get_bar_len()
         self.goto_page(t)
         #self.active_i += 1
+        print("backup")
+        self.redrawme = True
 
     def fwd_a_bar(self):
         if self.active_i >= len(self.__active_notes):
@@ -231,13 +238,19 @@ class Game:
         t = int(t/self.midifile.time_sig.get_bar_len()+1) * self.midifile.time_sig.get_bar_len()
         while(self.active_i < len(self.__active_notes)-1 and self.__active_notes[self.active_i][0].time < t):
             self.active_i += 1
+            self.l_notes_down = []
         self.goto_page(t)
+        print("fwd")
+        self.redrawme = True
 
 
 
     def pop_active(self):
         r = self.__active_notes[self.active_i]
         self.active_i += 1
+        self.l_notes_down = []
+        print("pop act")
+        self.redrawme = True
         return r
 
     def next_active_note(self):
@@ -252,31 +265,30 @@ class Game:
 
 
     def draw(self, surface):
-        if self.eek:
-            surface.fill(style.main_bg_eek)
-        else:
-            surface.fill(style.main_bg)
+        #if self.eek:
+        #    surface.fill(style.main_bg_eek)
+        #else:
+
+        #if self.redrawme == False:
+        #    return
+        self.redrawme = False
+
+        surface.fill(style.main_bg)
         dim = surface.get_rect()
 
         if self.alive:
             if self.last_drawn_page != self.page_i:
-                self.notes_down = None
+                self.l_notes_down = []
                 self.dot_drawer.draw_music(self.dot_surface, self.page_i)
             self.last_drawn_page = self.page_i
 
             surface.blit(self.dot_surface, (self.stave_position))
             
-            isbad = False
-            self.dot_drawer.blob_note(surface, self.active_i, None, (50,50,50), self.stave_position)
-            if self.notes_down:
-                acti, notes = self.notes_down
-                for n in notes:
-                    if hasattr(n,'bad') and n.bad:
-                        isbad = True
-                        self.dot_drawer.blob_note(surface, acti, n, (200,0,0), offset=self.stave_position)
-                    else:
-                        self.dot_drawer.blob_note(surface, acti, n, (0,200,0), offset=self.stave_position)
-                        self.notes_down = None
+            self.dot_drawer.blob_note(surface, self.active_i, None, self.stave_position)
+            if len(self.l_notes_down)>0:
+                r = self.stave_position
+                for acti, n in self.l_notes_down:
+                    self.dot_drawer.blob_note(surface, acti, n, offset=r)
 
             if style.speed != 0:
                 crash = self.dot_drawer.draw_time_line(surface, self.stave_position, self.page_i, self.__time, self.active_i)
@@ -405,7 +417,7 @@ class Game:
     def advance(self):
         rv = None
         if self.alive :
-            self.__time += style.time_inc * style.speed / 2
+            self.__time += style.time_inc * style.speed / 10
             if self.next_active_note() == None:
                 self.timer_last_note_down = pygame.time.get_ticks()
                 self.win = 1
@@ -423,6 +435,8 @@ class Game:
 
 
     def return_end_of_level(self):
+        print("return eol")
+        self.redrawme = True
         if self.win == 1:
             return "LevelComplete"
         else:
@@ -430,6 +444,8 @@ class Game:
 
 
     def key_down(self, key):
+        print("key down")
+        self.redrawme = True
         if key == pygame.K_LEFT:
             self.player.score.invalid = True
             if self.alive == False or self.active_i == 0:
@@ -457,11 +473,12 @@ class Game:
     def mouse_move(self, pos):
         pass
 
-    def note_up(self, nn):
-        if nn in self.keyboard.wrong_keys:
-            self.keyboard.wrong_keys.remove(nn)
+    def note_up(self, nn, notes_down):
+        self.l_notes_down[:] = [n for n in self.l_notes_down if n[1].nn != nn]
+        self.redrawme = True
 
     def note_down(self, nn, notes_down):
+        self.redrawme = True
         if self.__prev_error_note in notes_down:
             ignore_error = 1
         else:
@@ -474,17 +491,34 @@ class Game:
         if self.timer_first_note_down == -1:
             self.timer_first_note_down = pygame.time.get_ticks()
 
-        self.keyboard.wrong_keys.append(nn)
+        blb = Note()
+        blb.nn = nn
+        self.l_notes_down.append([self.active_i, blb])
 
+        
         rv = 0
         if self.next_active_note():
             notes_scripted = [o.nn for o in self.next_active_note()]
 
+            t = []
+            
+#            for n in notes_down:
+#                blb = Note()
+#                blb.nn = n
+#                near = min(self.next_active_note(), key=lambda x: abs(n-x.nn))
+#                blb.clef = near.clef
+#                blb.x = near.x
+#                blb.bad = n not in notes_scripted
+#                t.append(blb)
+#                self.player.score.errors += 1
+#            self.l_notes_down = (self.active_i, t)
+
+
             if all (n in notes_scripted for n in notes_down):
                 rv = self.next_active_note()
+                self.eek = False
                 if all (n in notes_down for n in notes_scripted):
-                    self.eek = False
-                    self.notes_down = (self.active_i, rv)
+                    #self.l_notes_down = (self.active_i, rv)
                     self.pop_active()
                     for n in rv:
                         if n.fail == -1:
@@ -517,17 +551,6 @@ class Game:
                     else:
                         n.fail += 1
 
-                t = []
-                for n in notes_down:
-                    blb = Note()
-                    blb.nn = n
-                    near = min(self.next_active_note(), key=lambda x: abs(n-x.nn))
-                    blb.clef = near.clef
-                    blb.x = near.x
-                    blb.bad = 1
-                    t.append(blb)
-                    self.player.score.errors += 1
-                self.notes_down = (self.active_i, t)
 
                 if style.speed != 0:
                     self.player.lives -= 1

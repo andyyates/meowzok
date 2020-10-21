@@ -99,9 +99,13 @@ class Note:
         self.sprite = None
         self.length_ticks = length_ticks
         self.length_name = length_name
+        self.beamy = 0
 
     def note_name(self):
         return 'c,c#,d,d#,e,f,f#,g,g#,a,a#,b'.split(",")[self.nn%12]
+
+    def inspect(self):
+        print("Note %s nn:%d t:%d", self.note_name(), self.time)
 
     def __eq__(self, other): 
         if not isinstance(other, Note):
@@ -195,13 +199,14 @@ class MKMidiFile():
                     tmp_notes.append(n)
                     notes_on.append(n)
                 elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
-                    killem = [n for n in notes_on if n.nn == msg.note and n.channel == msg.channel]
+                    killem = [n for n in notes_on if n.nn == msg.note and n.channel == msg.channel and time-n.time>0] #check length - allows overlapping notes where one note goes off at the same time as another goes on
                     for n in killem:
                         notes_on.remove(n)
                         l = time - n.time
                         if l == 0:
                             print(msg)
                             print("Note len zero at ", time, n.time, " note dropped")
+                            tmp_notes.remove(n)
                         else:
                             n.length = self.time_sig.quantize_length(l)
                             n.time = self.time_sig.quantize_time(n.time)
